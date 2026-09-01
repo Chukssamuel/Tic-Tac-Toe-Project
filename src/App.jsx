@@ -22,6 +22,7 @@ import {
   saveGameMode,
   saveDifficulty,
   saveMatchLength,
+  saveColorMode,
   recordMatch,
   saveMatchHistory,
 } from './utils/storage';
@@ -43,6 +44,9 @@ export default function App() {
 
   // Match Length: 'single' | 3 | 5 (persisted)
   const [matchLength, setMatchLength] = useState(initialData.matchLength);
+
+  // Color Mode: 'light' | 'dark' (persisted)
+  const [colorMode, setColorMode] = useState(initialData.colorMode || 'light');
 
   // Match tracking
   const [roundNumber, setRoundNumber] = useState(1);
@@ -442,6 +446,21 @@ export default function App() {
     });
   }, []);
 
+  // Synchronize colorMode with DOM root
+  useEffect(() => {
+    document.documentElement.setAttribute('data-color-mode', colorMode);
+  }, [colorMode]);
+
+  // Theme toggle handler
+  const handleToggleTheme = useCallback(() => {
+    sounds.playClick();
+    setColorMode((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      saveColorMode(next);
+      return next;
+    });
+  }, []);
+
   // Sound toggle handler
   const handleToggleSound = useCallback(() => {
     const nextMuted = sounds.toggleMute();
@@ -468,6 +487,8 @@ export default function App() {
         onToggleSound={handleToggleSound}
         onOpenStats={handleToggleStats}
         onOpenHistory={handleToggleHistory}
+        colorMode={colorMode}
+        onToggleTheme={handleToggleTheme}
       />
 
       <main className="main-content">

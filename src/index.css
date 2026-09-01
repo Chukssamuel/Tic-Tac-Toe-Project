@@ -45,6 +45,40 @@
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-color-mode="dark"] {
+  --primary: #3B82F6;
+  --primary-dark: #2563EB;
+  --primary-light: #1E3A8A;
+  --primary-subtle: #172554;
+  --primary-glow: rgba(59, 130, 246, 0.35);
+
+  --background: #0B1120;
+  --surface: #1E293B;
+  --surface-hover: #334155;
+  --text: #F8FAFC;
+  --muted: #94A3B8;
+  --border: #334155;
+  --border-light: #1E293B;
+
+  --success: #22C55E;
+  --success-dark: #16A34A;
+  --success-light: #064E3B;
+  --success-glow: rgba(34, 197, 94, 0.35);
+
+  --danger: #EF4444;
+  --danger-dark: #DC2626;
+  --danger-light: #450A0A;
+
+  --player-x: #60A5FA;
+  --player-o: #38BDF8;
+  --draw-color: #94A3B8;
+  --streak-color: #F97316;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+}
+
 /* Reset & Base */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -165,6 +199,41 @@ html, body {
 .header-stats-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Theme Toggle Button (Light/Dark) */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.sun-icon {
+  color: #F59E0B;
+}
+
+.moon-icon {
+  color: #6366F1;
 }
 
 /* Sound Toggle Button */
@@ -1570,6 +1639,102 @@ html, body {
 .footer-sub {
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+/* Dark Mode specific component adjustments */
+[data-color-mode="dark"] .streak-bar {
+  background: #2D1A0E;
+  border-color: #59250B;
+}
+
+[data-color-mode="dark"] .best-streak-text {
+  color: #FDBA74;
+}
+
+[data-color-mode="dark"] .match-length-container {
+  background: #064E3B;
+  border-color: #047857;
+}
+
+[data-color-mode="dark"] .match-length-label-row,
+[data-color-mode="dark"] .match-length-label {
+  color: #6EE7B7;
+}
+
+[data-color-mode="dark"] .status-turn-x {
+  background: #172554;
+  color: #93C5FD;
+  border-color: #1E40AF;
+}
+
+[data-color-mode="dark"] .status-turn-o {
+  background: #082F49;
+  color: #7DD3FC;
+  border-color: #0369A1;
+}
+
+[data-color-mode="dark"] .status-winner {
+  background: #064E3B;
+  color: #86EFAC;
+  border-color: #059669;
+}
+
+[data-color-mode="dark"] .status-draw {
+  background: #1E293B;
+  color: #94A3B8;
+  border-color: #334155;
+}
+
+[data-color-mode="dark"] .status-thinking {
+  background: #3B0764;
+  color: #D8B4FE;
+  border-color: #6B21A8;
+}
+
+[data-color-mode="dark"] .status-match-winner {
+  background: linear-gradient(135deg, #713F12, #854D0E);
+  color: #FEF08A;
+  border-color: #CA8A04;
+}
+
+[data-color-mode="dark"] .score-name-input {
+  background: #0F172A;
+  color: #F8FAFC;
+  border-color: #3B82F6;
+}
+
+[data-color-mode="dark"] .difficulty-container {
+  background: #172554;
+  border-color: #1E40AF;
+}
+
+[data-color-mode="dark"] .difficulty-label {
+  color: #93C5FD;
+}
+
+[data-color-mode="dark"] .stat-card.stat-o {
+  background: #082F49;
+  border-color: #0369A1;
+}
+
+[data-color-mode="dark"] .stat-card.stat-x {
+  background: #172554;
+  border-color: #1E40AF;
+}
+
+[data-color-mode="dark"] .stat-card.stat-draw {
+  background: #1E293B;
+  border-color: #334155;
+}
+
+[data-color-mode="dark"] .record-item {
+  background: #0F172A;
+  border-color: #334155;
+}
+
+[data-color-mode="dark"] .confirm-modal-footer {
+  background: #0F172A;
+  border-color: #334155;
 }
 
 /* Prefers-reduced-motion compliance */

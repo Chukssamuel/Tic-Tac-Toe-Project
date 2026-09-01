@@ -1,12 +1,15 @@
 import React from 'react';
 import { BarChart2, History } from 'lucide-react';
 import SoundToggle from './SoundToggle';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header({
   isMuted,
   onToggleSound,
   onOpenStats,
   onOpenHistory,
+  colorMode,
+  onToggleTheme,
 }) {
   return (
     <header className="header" role="banner">
@@ -19,6 +22,7 @@ export default function Header({
           </div>
         </div>
         <div className="header-meta">
+          <ThemeToggle colorMode={colorMode} onToggle={onToggleTheme} />
           <button
             type="button"
             className="header-stats-btn"

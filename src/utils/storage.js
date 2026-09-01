@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   GAME_MODE: 'samuel_ttt_game_mode',
   DIFFICULTY: 'samuel_ttt_difficulty',
   MATCH_LENGTH: 'samuel_ttt_match_length',
+  COLOR_MODE: 'samuel_ttt_color_mode',
 };
 
 const DEFAULT_SCORES = { x: 0, o: 0, draws: 0 };
@@ -60,6 +61,7 @@ export function loadInitialState() {
     gameMode: getStoredItem(STORAGE_KEYS.GAME_MODE, 'pvp'),
     difficulty: getStoredItem(STORAGE_KEYS.DIFFICULTY, 'medium'),
     matchLength: getStoredItem(STORAGE_KEYS.MATCH_LENGTH, 'single'), // 'single' | 3 | 5
+    colorMode: getStoredItem(STORAGE_KEYS.COLOR_MODE, 'light'), // 'light' | 'dark'
   };
 }
 
@@ -110,6 +112,13 @@ export function saveDifficulty(diff) {
  */
 export function saveMatchLength(length) {
   setStoredItem(STORAGE_KEYS.MATCH_LENGTH, length);
+}
+
+/**
+ * Persists Color Mode ('light' | 'dark')
+ */
+export function saveColorMode(mode) {
+  setStoredItem(STORAGE_KEYS.COLOR_MODE, mode);
 }
 
 /**
