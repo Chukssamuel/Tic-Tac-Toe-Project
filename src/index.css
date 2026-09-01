@@ -819,6 +819,98 @@ html, body {
   }
 }
 
+/* Match Summary Card (FR-08) */
+.match-summary-card {
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 0.875rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.summary-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.summary-win {
+  color: var(--primary);
+}
+
+.summary-draw {
+  color: var(--muted);
+}
+
+.summary-result-icon {
+  flex-shrink: 0;
+}
+
+.summary-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.summary-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.775rem;
+}
+
+.summary-stat-icon {
+  color: var(--muted);
+}
+
+.summary-stat-val {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.summary-stat-label {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.summary-divider {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.summary-match-labels {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.summary-player-label {
+  font-weight: 600;
+}
+
+.summary-score-sep {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--border);
+}
+
 /* Action Controls (New Game Button) */
 .actions-section {
   display: flex;

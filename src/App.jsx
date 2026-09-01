@@ -6,6 +6,7 @@ import GameStatus from './components/GameStatus';
 import ScoreBoard from './components/ScoreBoard';
 import Board from './components/Board';
 import NewGameButton from './components/NewGameButton';
+import MatchSummary from './components/MatchSummary';
 import StatsView from './components/StatsView';
 import GameHistoryView from './components/GameHistoryView';
 import ConfirmDialog from './components/ConfirmDialog';
@@ -47,6 +48,9 @@ export default function App() {
   const [roundNumber, setRoundNumber] = useState(1);
   const [matchWinner, setMatchWinner] = useState(null); // 'X' | 'O' | null
 
+  // Round Summary (shown after each round ends)
+  const [roundSummary, setRoundSummary] = useState(null);
+
   // Custom Player Names (persisted)
   const [playerNames, setPlayerNames] = useState(initialData.playerNames);
 
@@ -73,6 +77,8 @@ export default function App() {
 
   const isGameOver = Boolean(winner || isDraw);
   const aiTimeoutRef = useRef(null);
+  // Tracks when current round started (for duration calculation)
+  const roundStartTimeRef = useRef(Date.now());
 
   // Helper: wins needed to claim match
   const winsNeeded = matchLength !== 'single' ? Math.ceil(matchLength / 2) : null;
@@ -144,11 +150,21 @@ export default function App() {
 
         const winnerKey = winResult.winner.toLowerCase();
         const winnerName = playerNames[winResult.winner] || `Player ${winResult.winner}`;
+        const durationSec = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
 
         // Update scores and check if match is over
         setScores((prev) => {
           const nextScores = { ...prev, [winnerKey]: prev[winnerKey] + 1 };
           saveScores(nextScores);
+
+          setRoundSummary({
+            winner: winResult.winner,
+            winnerName,
+            moveCount,
+            durationSec,
+            scores: nextScores,
+            roundNumber,
+          });
 
           // Check match winner after score update
           if (winsNeeded !== null && nextScores[winnerKey] >= winsNeeded) {
@@ -184,10 +200,21 @@ export default function App() {
 
       if (checkDraw(nextBoard, null)) {
         setIsDraw(true);
+        const durationSec = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
 
         setScores((prev) => {
           const nextScores = { ...prev, draws: prev.draws + 1 };
           saveScores(nextScores);
+
+          setRoundSummary({
+            winner: null,
+            winnerName: 'Draw',
+            moveCount,
+            durationSec,
+            scores: nextScores,
+            roundNumber,
+          });
+
           return nextScores;
         });
 
@@ -272,6 +299,8 @@ export default function App() {
     setWinningCells([]);
     setIsDraw(false);
     setIsAiThinking(false);
+    setRoundSummary(null);
+    roundStartTimeRef.current = Date.now();
     if (!matchWinner) {
       setRoundNumber((prev) => (isGameOver ? prev + 1 : prev));
     }
@@ -286,6 +315,8 @@ export default function App() {
     saveScores(cleanScores);
     setMatchWinner(null);
     setRoundNumber(1);
+    setRoundSummary(null);
+    roundStartTimeRef.current = Date.now();
     setBoard(Array(9).fill(null));
     setCurrentPlayer('X');
     setWinner(null);
@@ -303,6 +334,8 @@ export default function App() {
     saveScores(cleanScores);
     setMatchWinner(null);
     setRoundNumber(1);
+    setRoundSummary(null);
+    roundStartTimeRef.current = Date.now();
     setBoard(Array(9).fill(null));
     setCurrentPlayer('X');
     setWinner(null);
@@ -482,6 +515,14 @@ export default function App() {
             onCellClick={handleCellClick}
             isGameOver={isGameOver || isAiThinking || Boolean(matchWinner)}
           />
+
+          {roundSummary && (
+            <MatchSummary
+              summary={roundSummary}
+              matchLength={matchLength}
+              playerNames={playerNames}
+            />
+          )}
 
           <NewGameButton
             onRestart={handleRestart}
