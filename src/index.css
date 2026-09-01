@@ -79,6 +79,108 @@
   --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
 }
 
+/* ==========================================================================
+   Custom Themes
+   ========================================================================== */
+
+/* Neon Glow Theme */
+[data-theme="neon"] {
+  --primary: #00F5FF;
+  --primary-dark: #00C4CC;
+  --primary-light: #083344;
+  --primary-subtle: #082F49;
+  --primary-glow: rgba(0, 245, 255, 0.5);
+
+  --player-x: #00F5FF;
+  --player-o: #FF007F;
+  --streak-color: #FF007F;
+}
+[data-theme="neon"][data-color-mode="dark"],
+[data-theme="neon"] {
+  --background: #030712;
+  --surface: #111827;
+  --surface-hover: #1F2937;
+  --border: #1F2937;
+  --border-light: #111827;
+}
+
+/* Cyberpunk Theme */
+[data-theme="cyberpunk"] {
+  --primary: #FEE715;
+  --primary-dark: #E5CF02;
+  --primary-light: #382B00;
+  --primary-subtle: #241C00;
+  --primary-glow: rgba(254, 231, 21, 0.45);
+
+  --player-x: #FEE715;
+  --player-o: #C084FC;
+  --streak-color: #EC4899;
+}
+[data-theme="cyberpunk"][data-color-mode="dark"],
+[data-theme="cyberpunk"] {
+  --background: #0D0F18;
+  --surface: #171A29;
+  --surface-hover: #22263C;
+  --border: #2B304C;
+  --border-light: #1D2136;
+}
+
+/* Minimalist Theme */
+[data-theme="minimal"] {
+  --primary: #0F172A;
+  --primary-dark: #020617;
+  --primary-light: #E2E8F0;
+  --primary-subtle: #F1F5F9;
+  --primary-glow: rgba(15, 23, 42, 0.15);
+
+  --player-x: #0F172A;
+  --player-o: #475569;
+  --streak-color: #334155;
+  --radius-xl: 12px;
+  --radius-lg: 8px;
+  --radius-md: 6px;
+}
+[data-theme="minimal"][data-color-mode="dark"] {
+  --primary: #F8FAFC;
+  --primary-dark: #E2E8F0;
+  --primary-light: #334155;
+  --primary-subtle: #1E293B;
+  --primary-glow: rgba(248, 250, 252, 0.2);
+
+  --player-x: #F8FAFC;
+  --player-o: #94A3B8;
+  --background: #020617;
+  --surface: #0F172A;
+  --surface-hover: #1E293B;
+  --border: #1E293B;
+  --border-light: #0F172A;
+}
+
+/* Glassmorphism Theme */
+[data-theme="glassmorphism"] {
+  --primary: #8B5CF6;
+  --primary-dark: #7C3AED;
+  --primary-light: #EDE9FE;
+  --primary-subtle: #F5F3FF;
+  --primary-glow: rgba(139, 92, 246, 0.35);
+
+  --player-x: #8B5CF6;
+  --player-o: #06B6D4;
+  --streak-color: #EC4899;
+}
+[data-theme="glassmorphism"] .game-card,
+[data-theme="glassmorphism"] .stats-modal-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+[data-theme="glassmorphism"][data-color-mode="dark"] .game-card,
+[data-theme="glassmorphism"][data-color-mode="dark"] .stats-modal-card {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Reset & Base */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -1730,6 +1832,92 @@ html, body {
 [data-color-mode="dark"] .record-item {
   background: #0F172A;
   border-color: #334155;
+}
+
+/* Theme Selector Modal Styles */
+.theme-modal-card {
+  max-width: 500px;
+}
+
+.theme-modal-intro {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+}
+
+.theme-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.875rem 1rem;
+  background: var(--background);
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+}
+
+.theme-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.theme-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-subtle);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.theme-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.theme-card-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.theme-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.725rem;
+  font-weight: 700;
+}
+
+.theme-card-desc {
+  font-size: 0.785rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.theme-card-swatches {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.theme-swatch {
+  width: 22px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 [data-color-mode="dark"] .confirm-modal-footer {

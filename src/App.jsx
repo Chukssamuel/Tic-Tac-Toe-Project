@@ -7,6 +7,7 @@ import ScoreBoard from './components/ScoreBoard';
 import Board from './components/Board';
 import NewGameButton from './components/NewGameButton';
 import MatchSummary from './components/MatchSummary';
+import ThemeSelectorModal from './components/ThemeSelectorModal';
 import StatsView from './components/StatsView';
 import GameHistoryView from './components/GameHistoryView';
 import ConfirmDialog from './components/ConfirmDialog';
@@ -23,6 +24,7 @@ import {
   saveDifficulty,
   saveMatchLength,
   saveColorMode,
+  saveTheme,
   recordMatch,
   saveMatchHistory,
 } from './utils/storage';
@@ -48,6 +50,9 @@ export default function App() {
   // Color Mode: 'light' | 'dark' (persisted)
   const [colorMode, setColorMode] = useState(initialData.colorMode || 'light');
 
+  // Active Theme: 'classic' | 'neon' | 'cyberpunk' | 'minimal' | 'glassmorphism' (persisted)
+  const [activeTheme, setActiveTheme] = useState(initialData.activeTheme || 'classic');
+
   // Match tracking
   const [roundNumber, setRoundNumber] = useState(1);
   const [matchWinner, setMatchWinner] = useState(null); // 'X' | 'O' | null
@@ -68,6 +73,7 @@ export default function App() {
   // Modals & Confirmation Dialog State
   const [showStats, setShowStats] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showThemes, setShowThemes] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
     title: '',
@@ -446,12 +452,16 @@ export default function App() {
     });
   }, []);
 
-  // Synchronize colorMode with DOM root
+  // Synchronize colorMode and activeTheme with DOM root
   useEffect(() => {
     document.documentElement.setAttribute('data-color-mode', colorMode);
   }, [colorMode]);
 
-  // Theme toggle handler
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', activeTheme);
+  }, [activeTheme]);
+
+  // Theme toggle handler (light/dark)
   const handleToggleTheme = useCallback(() => {
     sounds.playClick();
     setColorMode((prev) => {
@@ -459,6 +469,13 @@ export default function App() {
       saveColorMode(next);
       return next;
     });
+  }, []);
+
+  // Visual Theme select handler
+  const handleSelectTheme = useCallback((themeId) => {
+    sounds.playClick();
+    setActiveTheme(themeId);
+    saveTheme(themeId);
   }, []);
 
   // Sound toggle handler
@@ -487,6 +504,10 @@ export default function App() {
         onToggleSound={handleToggleSound}
         onOpenStats={handleToggleStats}
         onOpenHistory={handleToggleHistory}
+        onOpenThemes={() => {
+          sounds.playClick();
+          setShowThemes(true);
+        }}
         colorMode={colorMode}
         onToggleTheme={handleToggleTheme}
       />
@@ -571,6 +592,14 @@ export default function App() {
           matchHistory={matchHistory}
           onClearHistory={handleRequestClearHistory}
           onClose={() => setShowHistory(false)}
+        />
+      )}
+
+      {showThemes && (
+        <ThemeSelectorModal
+          activeTheme={activeTheme}
+          onSelectTheme={handleSelectTheme}
+          onClose={() => setShowThemes(false)}
         />
       )}
 

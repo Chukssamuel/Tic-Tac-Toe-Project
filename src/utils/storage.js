@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   DIFFICULTY: 'samuel_ttt_difficulty',
   MATCH_LENGTH: 'samuel_ttt_match_length',
   COLOR_MODE: 'samuel_ttt_color_mode',
+  THEME: 'samuel_ttt_theme',
 };
 
 const DEFAULT_SCORES = { x: 0, o: 0, draws: 0 };
@@ -62,6 +63,7 @@ export function loadInitialState() {
     difficulty: getStoredItem(STORAGE_KEYS.DIFFICULTY, 'medium'),
     matchLength: getStoredItem(STORAGE_KEYS.MATCH_LENGTH, 'single'), // 'single' | 3 | 5
     colorMode: getStoredItem(STORAGE_KEYS.COLOR_MODE, 'light'), // 'light' | 'dark'
+    activeTheme: getStoredItem(STORAGE_KEYS.THEME, 'classic'), // 'classic' | 'neon' | 'cyberpunk' | 'minimal' | 'glassmorphism'
   };
 }
 
@@ -119,6 +121,13 @@ export function saveMatchLength(length) {
  */
 export function saveColorMode(mode) {
   setStoredItem(STORAGE_KEYS.COLOR_MODE, mode);
+}
+
+/**
+ * Persists Active Theme ('classic' | 'neon' | 'cyberpunk' | 'minimal' | 'glassmorphism')
+ */
+export function saveTheme(theme) {
+  setStoredItem(STORAGE_KEYS.THEME, theme);
 }
 
 /**

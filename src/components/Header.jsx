@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart2, History } from 'lucide-react';
+import { BarChart2, History, Palette } from 'lucide-react';
 import SoundToggle from './SoundToggle';
 import ThemeToggle from './ThemeToggle';
 
@@ -8,6 +8,7 @@ export default function Header({
   onToggleSound,
   onOpenStats,
   onOpenHistory,
+  onOpenThemes,
   colorMode,
   onToggleTheme,
 }) {
@@ -22,6 +23,16 @@ export default function Header({
           </div>
         </div>
         <div className="header-meta">
+          <button
+            type="button"
+            className="header-stats-btn"
+            onClick={onOpenThemes}
+            title="Customize Theme"
+            aria-label="Customize theme"
+          >
+            <Palette size={16} aria-hidden="true" />
+            <span className="header-stats-text">Themes</span>
+          </button>
           <ThemeToggle colorMode={colorMode} onToggle={onToggleTheme} />
           <button
             type="button"
