@@ -295,6 +295,23 @@ export default function App() {
     sounds.playReset();
   }, []);
 
+  // Rematch — same players, names, mode, difficulty and match length; just resets the board + scores
+  const handleRematch = useCallback(() => {
+    if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+    const cleanScores = { x: 0, o: 0, draws: 0 };
+    setScores(cleanScores);
+    saveScores(cleanScores);
+    setMatchWinner(null);
+    setRoundNumber(1);
+    setBoard(Array(9).fill(null));
+    setCurrentPlayer('X');
+    setWinner(null);
+    setWinningCells([]);
+    setIsDraw(false);
+    setIsAiThinking(false);
+    sounds.playReset();
+  }, []);
+
   // Request confirmation to reset scores
   const handleRequestResetStats = useCallback(() => {
     sounds.playClick();
@@ -470,6 +487,7 @@ export default function App() {
             onRestart={handleRestart}
             onResetAll={handleRequestResetStats}
             onNewMatch={handleNewMatch}
+            onRematch={handleRematch}
             isGameOver={isGameOver}
             matchWinner={matchWinner}
             matchLength={matchLength}

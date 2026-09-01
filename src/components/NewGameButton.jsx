@@ -1,10 +1,11 @@
 import React from 'react';
-import { RotateCcw, Trash2, Swords } from 'lucide-react';
+import { RotateCcw, Trash2, Swords, RefreshCw } from 'lucide-react';
 
 export default function NewGameButton({
   onRestart,
   onResetAll,
   onNewMatch,
+  onRematch,
   isGameOver,
   matchWinner,
   matchLength,
@@ -13,35 +14,50 @@ export default function NewGameButton({
   const isMatchMode = matchLength !== 'single';
   const matchOver = Boolean(matchWinner);
 
-  // Label logic
-  const primaryLabel = matchOver
-    ? 'New Match'
-    : isGameOver
-    ? 'Next Round'
-    : 'Restart Round';
+  // After a match ends in Best-of-N, show Rematch + New Match
+  if (matchOver && isMatchMode) {
+    return (
+      <div className="actions-section">
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={onRematch}
+          disabled={disabled}
+          aria-label="Rematch — same players and settings"
+        >
+          <RefreshCw size={18} aria-hidden="true" />
+          <span>Rematch</span>
+        </button>
 
-  const primaryAriaLabel = matchOver
-    ? 'Start a new Best-of match'
-    : isGameOver
-    ? 'Play next round'
-    : 'Restart current round';
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={onNewMatch}
+          disabled={disabled}
+          title="Start a new match (resets scores)"
+          aria-label="Start a brand-new match"
+        >
+          <Swords size={16} aria-hidden="true" />
+          <span className="btn-secondary-text">New Match</span>
+        </button>
+      </div>
+    );
+  }
 
-  const handlePrimary = matchOver && onNewMatch ? onNewMatch : onRestart;
+  // Standard round controls
+  const primaryLabel = isGameOver ? 'Next Round' : 'Restart Round';
+  const primaryAriaLabel = isGameOver ? 'Play next round' : 'Restart current round';
 
   return (
     <div className="actions-section">
       <button
         type="button"
         className="btn-primary"
-        onClick={handlePrimary}
+        onClick={onRestart}
         disabled={disabled}
         aria-label={primaryAriaLabel}
       >
-        {matchOver ? (
-          <Swords size={18} aria-hidden="true" />
-        ) : (
-          <RotateCcw size={18} aria-hidden="true" />
-        )}
+        <RotateCcw size={18} aria-hidden="true" />
         <span>{primaryLabel}</span>
       </button>
 
