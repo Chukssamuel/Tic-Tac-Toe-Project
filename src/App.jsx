@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import confetti from 'canvas-confetti';
 import Header from './components/Header';
 import ModeSelector from './components/ModeSelector';
@@ -35,6 +35,10 @@ import {
 } from './utils/storage';
 
 const emptyBoard = (size) => Array(size * size).fill(null);
+
+// Online mode is loaded on demand so the Firebase SDK doesn't weigh down
+// the initial bundle for offline players.
+const OnlineGame = lazy(() => import('./components/OnlineGame'));
 
 export default function App() {
   // Load persistent state from localStorage
@@ -472,6 +476,9 @@ export default function App() {
       setGameMode(newMode);
       saveGameMode(newMode);
 
+      // Online play manages its own room state — leave the offline board untouched.
+      if (newMode === 'online') return;
+
       let nextNames = playerNames;
       if (newMode === 'ai') {
         const human = humanSide;
@@ -672,7 +679,8 @@ export default function App() {
   }, []);
 
   // ---- Match Clock: tick the active player down every second ----
-  const clockRunning = clockEnabled && !winner && !isDraw && !matchWinner;
+  const clockRunning =
+    gameMode !== 'online' && clockEnabled && !winner && !isDraw && !matchWinner;
 
   useEffect(() => {
     if (!clockRunning) return;
@@ -687,7 +695,7 @@ export default function App() {
 
   // ---- Match Clock: a player who runs out of time loses the round ----
   useEffect(() => {
-    if (!clockEnabled || winner || isDraw || matchWinner) return;
+    if (gameMode === 'online' || !clockEnabled || winner || isDraw || matchWinner) return;
     if (clocks.X <= 0 || clocks.O <= 0) {
       const loser = clocks.X <= 0 ? 'X' : 'O';
       const other = loser === 'X' ? 'O' : 'X';
@@ -735,6 +743,22 @@ export default function App() {
           disabled={isAiThinking}
         />
 
+        {gameMode === 'online' ? (
+          <Suspense
+            fallback={
+              <div className="online-container">
+                <div className="online-card">
+                  <div className="online-waiting-hint">
+                    <span className="spin" aria-hidden="true">⏳</span>
+                    <span>Loading online mode…</span>
+                  </div>
+                </div>
+              </div>
+            }
+          >
+            <OnlineGame onExit={() => handleModeChange('pvp')} />
+          </Suspense>
+        ) : (
         <div className="game-card">
           <ScoreBoard
             scores={scores}
@@ -791,6 +815,7 @@ export default function App() {
             disabled={isAiThinking}
           />
         </div>
+        )}
       </main>
 
       {showStats && (

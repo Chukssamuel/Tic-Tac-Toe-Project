@@ -10,6 +10,7 @@ import {
   Grid3x3,
   Timer,
   User,
+  Globe,
 } from 'lucide-react';
 import { DIFFICULTY } from '../utils/aiLogic';
 
@@ -39,10 +40,12 @@ export default function ModeSelector({
   onClockMinutesChange,
   disabled,
 }) {
+  const isOnline = gameMode === 'online';
+
   return (
     <div className="mode-selector-container">
       {/* Game Mode Tabs */}
-      <div className="mode-tabs" role="tablist" aria-label="Game Mode Selection">
+      <div className="mode-tabs mode-tabs-3" role="tablist" aria-label="Game Mode Selection">
         <button
           type="button"
           role="tab"
@@ -65,6 +68,18 @@ export default function ModeSelector({
         >
           <Bot size={16} aria-hidden="true" />
           <span>vs Computer AI</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={gameMode === 'online'}
+          className={`mode-tab-btn ${gameMode === 'online' ? 'active' : ''}`}
+          onClick={() => onModeChange('online')}
+          disabled={disabled}
+        >
+          <Globe size={16} aria-hidden="true" />
+          <span>Play Online</span>
         </button>
       </div>
 
@@ -102,89 +117,95 @@ export default function ModeSelector({
         </div>
       )}
 
-      {/* Board Size */}
-      <div className="board-size-container" aria-label="Board size">
-        <span className="board-size-label">
-          <Grid3x3 size={13} aria-hidden="true" />
-          <span>Board:</span>
-        </span>
-        <div className="board-size-pills" role="group" aria-label="Board size options">
-          {BOARD_SIZE_OPTIONS.map((size) => (
-            <button
-              key={size}
-              type="button"
-              className={`board-size-pill ${boardSize === size ? 'active' : ''}`}
-              onClick={() => onBoardSizeChange(size)}
-              disabled={disabled}
-              title={`${size} by ${size} board`}
-              aria-pressed={boardSize === size}
-            >
-              {size}×{size}
-            </button>
-          ))}
+      {/* Board Size (offline modes only) */}
+      {!isOnline && (
+        <div className="board-size-container" aria-label="Board size">
+          <span className="board-size-label">
+            <Grid3x3 size={13} aria-hidden="true" />
+            <span>Board:</span>
+          </span>
+          <div className="board-size-pills" role="group" aria-label="Board size options">
+            {BOARD_SIZE_OPTIONS.map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={`board-size-pill ${boardSize === size ? 'active' : ''}`}
+                onClick={() => onBoardSizeChange(size)}
+                disabled={disabled}
+                title={`${size} by ${size} board`}
+                aria-pressed={boardSize === size}
+              >
+                {size}×{size}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Match Clock */}
-      <div className="clock-container" aria-label="Match clock">
-        <div className="clock-label-row">
-          <Timer size={13} aria-hidden="true" />
-          <span className="clock-label">Match Clock:</span>
-        </div>
-        <div className="clock-controls">
-          <button
-            type="button"
-            className={`clock-toggle ${clockEnabled ? 'active' : ''}`}
-            onClick={onToggleClock}
-            disabled={disabled}
-            aria-pressed={clockEnabled}
-            title={clockEnabled ? 'Turn the match clock off' : 'Turn the match clock on'}
-          >
-            {clockEnabled ? 'On' : 'Off'}
-          </button>
-          {clockEnabled && (
-            <div className="clock-minutes-pills" role="group" aria-label="Time per player">
-              {CLOCK_MINUTE_OPTIONS.map((mins) => (
-                <button
-                  key={mins}
-                  type="button"
-                  className={`clock-minute-pill ${clockMinutes === mins ? 'active' : ''}`}
-                  onClick={() => onClockMinutesChange(mins)}
-                  disabled={disabled}
-                  title={`${mins} minute${mins > 1 ? 's' : ''} per player`}
-                  aria-pressed={clockMinutes === mins}
-                >
-                  {mins} min
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Match Length Row */}
-      <div className="match-length-container" aria-label="Match Length">
-        <div className="match-length-label-row">
-          <Swords size={13} aria-hidden="true" />
-          <span className="match-length-label">Match Format:</span>
-        </div>
-        <div className="match-length-pills" role="group" aria-label="Match Length Options">
-          {MATCH_LENGTH_OPTIONS.map(({ value, label, short }) => (
+      {/* Match Clock (offline modes only) */}
+      {!isOnline && (
+        <div className="clock-container" aria-label="Match clock">
+          <div className="clock-label-row">
+            <Timer size={13} aria-hidden="true" />
+            <span className="clock-label">Match Clock:</span>
+          </div>
+          <div className="clock-controls">
             <button
-              key={value}
               type="button"
-              className={`match-length-pill ${matchLength === value ? 'active' : ''}`}
-              onClick={() => onMatchLengthChange(value)}
+              className={`clock-toggle ${clockEnabled ? 'active' : ''}`}
+              onClick={onToggleClock}
               disabled={disabled}
-              title={label}
-              aria-pressed={matchLength === value}
+              aria-pressed={clockEnabled}
+              title={clockEnabled ? 'Turn the match clock off' : 'Turn the match clock on'}
             >
-              {matchLength === value && <Trophy size={11} aria-hidden="true" />}
-              <span>{label}</span>
+              {clockEnabled ? 'On' : 'Off'}
             </button>
-          ))}
+            {clockEnabled && (
+              <div className="clock-minutes-pills" role="group" aria-label="Time per player">
+                {CLOCK_MINUTE_OPTIONS.map((mins) => (
+                  <button
+                    key={mins}
+                    type="button"
+                    className={`clock-minute-pill ${clockMinutes === mins ? 'active' : ''}`}
+                    onClick={() => onClockMinutesChange(mins)}
+                    disabled={disabled}
+                    title={`${mins} minute${mins > 1 ? 's' : ''} per player`}
+                    aria-pressed={clockMinutes === mins}
+                  >
+                    {mins} min
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Match Length Row (offline modes only) */}
+      {!isOnline && (
+        <div className="match-length-container" aria-label="Match Length">
+          <div className="match-length-label-row">
+            <Swords size={13} aria-hidden="true" />
+            <span className="match-length-label">Match Format:</span>
+          </div>
+          <div className="match-length-pills" role="group" aria-label="Match Length Options">
+            {MATCH_LENGTH_OPTIONS.map(({ value, label, short }) => (
+              <button
+                key={value}
+                type="button"
+                className={`match-length-pill ${matchLength === value ? 'active' : ''}`}
+                onClick={() => onMatchLengthChange(value)}
+                disabled={disabled}
+                title={label}
+                aria-pressed={matchLength === value}
+              >
+                {matchLength === value && <Trophy size={11} aria-hidden="true" />}
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Difficulty (AI mode only) */}
       {gameMode === 'ai' && (
