@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Flame, Edit2, Check } from 'lucide-react';
+import { Flame, Edit2, Check, Clock } from 'lucide-react';
 
 /** Renders win pip dots for Best-of-N match mode */
 function WinPips({ wins, target }) {
@@ -16,15 +16,26 @@ function WinPips({ wins, target }) {
   );
 }
 
+/** Formats a number of seconds as m:ss */
+function formatClock(seconds) {
+  const safe = Math.max(0, seconds);
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
 export default function ScoreBoard({
   scores,
   playerNames,
   onUpdatePlayerName,
   gameMode,
+  humanSide,
   currentPlayer,
   isGameOver,
   streak,
   matchLength,
+  clockEnabled,
+  clocks,
 }) {
   const isStreakActive = streak && streak.count > 1;
   const isMatchMode = matchLength !== 'single';
@@ -42,8 +53,7 @@ export default function ScoreBoard({
   }, [editingPlayer]);
 
   const handleStartEdit = (playerKey) => {
-    // In AI mode, 'O' is Flowai and is fixed
-    if (gameMode === 'ai' && playerKey === 'O') return;
+    if (!isPlayerEditable(playerKey)) return;
     setEditingPlayer(playerKey);
     setTempName(playerNames[playerKey] || '');
   };
@@ -54,7 +64,7 @@ export default function ScoreBoard({
     let finalName = trimmed;
     if (!finalName) {
       if (gameMode === 'ai') {
-        finalName = playerKey === 'X' ? 'You' : 'Flowai';
+        finalName = playerKey === humanSide ? 'You' : 'Flowai';
       } else {
         finalName = playerKey === 'X' ? 'Player 1' : 'Player 2';
       }
@@ -71,10 +81,13 @@ export default function ScoreBoard({
     }
   };
 
+  // In AI mode, only the human's own box is editable
   const isPlayerEditable = (playerKey) => {
-    if (gameMode === 'ai' && playerKey === 'O') return false;
-    return true;
+    if (gameMode !== 'ai') return true;
+    return playerKey === humanSide;
   };
+
+  const clockLow = (playerKey) => clocks[playerKey] <= 20;
 
   return (
     <div className="score-board-wrapper">
@@ -144,6 +157,17 @@ export default function ScoreBoard({
             )}
           </div>
           <div className="score-box-val">{scores.x}</div>
+          {clockEnabled && (
+            <div
+              className={`clock-readout ${
+                !isGameOver && currentPlayer === 'X' ? 'clock-active' : ''
+              } ${clockLow('X') ? 'clock-low' : ''}`}
+              title="Remaining time for X"
+            >
+              <Clock size={11} aria-hidden="true" />
+              <span>{formatClock(clocks.X)}</span>
+            </div>
+          )}
           {isMatchMode && <WinPips wins={scores.x} target={winsNeeded} />}
         </div>
 
@@ -192,7 +216,7 @@ export default function ScoreBoard({
             ) : (
               <div
                 className="score-box-label-row"
-                onClick={() => isPlayerEditable('O') && handleStartEdit('O')}
+                onClick={() => handleStartEdit('O')}
                 title={isPlayerEditable('O') ? 'Click to edit name' : playerNames.O}
               >
                 <span className="score-box-label">{playerNames.O} (O)</span>
@@ -213,6 +237,17 @@ export default function ScoreBoard({
             )}
           </div>
           <div className="score-box-val">{scores.o}</div>
+          {clockEnabled && (
+            <div
+              className={`clock-readout ${
+                !isGameOver && currentPlayer === 'O' ? 'clock-active' : ''
+              } ${clockLow('O') ? 'clock-low' : ''}`}
+              title="Remaining time for O"
+            >
+              <Clock size={11} aria-hidden="true" />
+              <span>{formatClock(clocks.O)}</span>
+            </div>
+          )}
           {isMatchMode && <WinPips wins={scores.o} target={winsNeeded} />}
         </div>
       </div>

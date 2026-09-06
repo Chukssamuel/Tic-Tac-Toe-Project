@@ -1,5 +1,16 @@
 import React from 'react';
-import { Users, Bot, Zap, ShieldAlert, Sparkles, Swords, Trophy } from 'lucide-react';
+import {
+  Users,
+  Bot,
+  Zap,
+  ShieldAlert,
+  Sparkles,
+  Swords,
+  Trophy,
+  Grid3x3,
+  Timer,
+  User,
+} from 'lucide-react';
 import { DIFFICULTY } from '../utils/aiLogic';
 
 const MATCH_LENGTH_OPTIONS = [
@@ -8,6 +19,9 @@ const MATCH_LENGTH_OPTIONS = [
   { value: 5, label: 'Best of 5', short: 'Bo5' },
 ];
 
+const BOARD_SIZE_OPTIONS = [3, 4, 5];
+const CLOCK_MINUTE_OPTIONS = [1, 2, 3, 5];
+
 export default function ModeSelector({
   gameMode,
   onModeChange,
@@ -15,6 +29,14 @@ export default function ModeSelector({
   onDifficultyChange,
   matchLength,
   onMatchLengthChange,
+  humanSide,
+  onHumanSideChange,
+  boardSize,
+  onBoardSizeChange,
+  clockEnabled,
+  onToggleClock,
+  clockMinutes,
+  onClockMinutesChange,
   disabled,
 }) {
   return (
@@ -44,6 +66,100 @@ export default function ModeSelector({
           <Bot size={16} aria-hidden="true" />
           <span>vs Computer AI</span>
         </button>
+      </div>
+
+      {/* Play As (AI mode only) */}
+      {gameMode === 'ai' && (
+        <div className="side-selector-container" aria-label="Choose your side">
+          <span className="side-selector-label">
+            <User size={13} aria-hidden="true" />
+            <span>Play as:</span>
+          </span>
+          <div className="side-selector-pills" role="group" aria-label="Play as options">
+            <button
+              type="button"
+              className={`side-selector-pill ${humanSide === 'X' ? 'active' : ''}`}
+              onClick={() => onHumanSideChange('X')}
+              disabled={disabled}
+              title="Play as X — you move first"
+              aria-pressed={humanSide === 'X'}
+            >
+              <span className="side-symbol">X</span>
+              <span>You go first</span>
+            </button>
+            <button
+              type="button"
+              className={`side-selector-pill ${humanSide === 'O' ? 'active' : ''}`}
+              onClick={() => onHumanSideChange('O')}
+              disabled={disabled}
+              title="Play as O — the AI moves first"
+              aria-pressed={humanSide === 'O'}
+            >
+              <span className="side-symbol">O</span>
+              <span>AI goes first</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Board Size */}
+      <div className="board-size-container" aria-label="Board size">
+        <span className="board-size-label">
+          <Grid3x3 size={13} aria-hidden="true" />
+          <span>Board:</span>
+        </span>
+        <div className="board-size-pills" role="group" aria-label="Board size options">
+          {BOARD_SIZE_OPTIONS.map((size) => (
+            <button
+              key={size}
+              type="button"
+              className={`board-size-pill ${boardSize === size ? 'active' : ''}`}
+              onClick={() => onBoardSizeChange(size)}
+              disabled={disabled}
+              title={`${size} by ${size} board`}
+              aria-pressed={boardSize === size}
+            >
+              {size}×{size}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Match Clock */}
+      <div className="clock-container" aria-label="Match clock">
+        <div className="clock-label-row">
+          <Timer size={13} aria-hidden="true" />
+          <span className="clock-label">Match Clock:</span>
+        </div>
+        <div className="clock-controls">
+          <button
+            type="button"
+            className={`clock-toggle ${clockEnabled ? 'active' : ''}`}
+            onClick={onToggleClock}
+            disabled={disabled}
+            aria-pressed={clockEnabled}
+            title={clockEnabled ? 'Turn the match clock off' : 'Turn the match clock on'}
+          >
+            {clockEnabled ? 'On' : 'Off'}
+          </button>
+          {clockEnabled && (
+            <div className="clock-minutes-pills" role="group" aria-label="Time per player">
+              {CLOCK_MINUTE_OPTIONS.map((mins) => (
+                <button
+                  key={mins}
+                  type="button"
+                  className={`clock-minute-pill ${clockMinutes === mins ? 'active' : ''}`}
+                  onClick={() => onClockMinutesChange(mins)}
+                  disabled={disabled}
+                  title={`${mins} minute${mins > 1 ? 's' : ''} per player`}
+                  aria-pressed={clockMinutes === mins}
+                >
+                  {mins} min
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Match Length Row */}
@@ -102,10 +218,10 @@ export default function ModeSelector({
               className={`difficulty-pill ${difficulty === DIFFICULTY.HARD ? 'active' : ''}`}
               onClick={() => onDifficultyChange(DIFFICULTY.HARD)}
               disabled={disabled}
-              title="Unbeatable Minimax AI"
+              title="Hard AI — unbeatable on 3x3, strong on larger boards"
             >
               <ShieldAlert size={13} aria-hidden="true" />
-              <span>Hard (Unbeatable)</span>
+              <span>Hard</span>
             </button>
           </div>
         </div>

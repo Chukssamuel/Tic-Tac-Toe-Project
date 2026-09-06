@@ -8,5 +8,6 @@ export default defineConfig({
     port: 3000,
     open: false,
     strictPort: true,
+    allowedHosts: ['.e2b.app', 'localhost'],
   },
 });

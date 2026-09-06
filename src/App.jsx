@@ -13,7 +13,7 @@ import GameHistoryView from './components/GameHistoryView';
 import ConfirmDialog from './components/ConfirmDialog';
 import Footer from './components/Footer';
 import { checkWinner, checkDraw } from './utils/gameLogic';
-import { getAiMove, DIFFICULTY } from './utils/aiLogic';
+import { getAiMove } from './utils/aiLogic';
 import { sounds } from './utils/soundEffects';
 import {
   loadInitialState,
@@ -25,15 +25,23 @@ import {
   saveMatchLength,
   saveColorMode,
   saveTheme,
+  saveHumanSide,
+  saveBoardSize,
+  saveClockEnabled,
+  saveClockMinutes,
   recordMatch,
   saveMatchHistory,
 } from './utils/storage';
+
+const emptyBoard = (size) => Array(size * size).fill(null);
 
 export default function App() {
   // Load persistent state from localStorage
   const [initialData] = useState(() => loadInitialState());
 
-  const [board, setBoard] = useState(Array(9).fill(null));
+  // Board size (persisted): 3 | 4 | 5
+  const [boardSize, setBoardSize] = useState(initialData.boardSize || 3);
+  const [board, setBoard] = useState(emptyBoard(initialData.boardSize || 3));
   const [currentPlayer, setCurrentPlayer] = useState('X');
   const [winner, setWinner] = useState(null);
   const [winningCells, setWinningCells] = useState([]);
@@ -44,14 +52,29 @@ export default function App() {
   const [difficulty, setDifficulty] = useState(initialData.difficulty);
   const [isAiThinking, setIsAiThinking] = useState(false);
 
+  // Which side the human plays vs the AI (persisted): 'X' | 'O'
+  const [humanSide, setHumanSide] = useState(initialData.humanSide || 'X');
+
   // Match Length: 'single' | 3 | 5 (persisted)
   const [matchLength, setMatchLength] = useState(initialData.matchLength);
 
   // Color Mode: 'light' | 'dark' (persisted)
   const [colorMode, setColorMode] = useState(initialData.colorMode || 'light');
 
-  // Active Theme: 'classic' | 'neon' | 'cyberpunk' | 'minimal' | 'glassmorphism' (persisted)
+  // Active Theme (persisted)
   const [activeTheme, setActiveTheme] = useState(initialData.activeTheme || 'classic');
+
+  // Match Clock (persisted): enabled flag + minutes per player
+  const [clockEnabled, setClockEnabled] = useState(Boolean(initialData.clockEnabled));
+  const [clockMinutes, setClockMinutes] = useState(initialData.clockMinutes || 2);
+  const clockBankSeconds = clockMinutes * 60;
+  const [clocks, setClocks] = useState({
+    X: (initialData.clockMinutes || 2) * 60,
+    O: (initialData.clockMinutes || 2) * 60,
+  });
+
+  // Move history (for undo)
+  const [moveHistory, setMoveHistory] = useState([]);
 
   // Match tracking
   const [roundNumber, setRoundNumber] = useState(1);
@@ -86,6 +109,7 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(sounds.isMuted());
 
   const isGameOver = Boolean(winner || isDraw);
+  const aiPlayer = humanSide === 'X' ? 'O' : 'X';
   const aiTimeoutRef = useRef(null);
   // Tracks when current round started (for duration calculation)
   const roundStartTimeRef = useRef(Date.now());
@@ -100,7 +124,7 @@ export default function App() {
         particleCount: big ? 150 : 80,
         spread: big ? 100 : 70,
         origin: { y: 0.62 },
-        colors: ['#2563EB', '#1D4ED8', '#60A5FA', '#93C5FD', '#16A34A', '#F59E0B'],
+        colors: ['#059669', '#10B981', '#34D399', '#A7F3D0', '#14B8A6', '#F59E0B'],
       });
       setTimeout(() => {
         confetti({
@@ -108,14 +132,14 @@ export default function App() {
           angle: 60,
           spread: big ? 80 : 55,
           origin: { x: 0 },
-          colors: ['#2563EB', '#38BDF8', '#10B981'],
+          colors: ['#059669', '#2DD4BF', '#10B981'],
         });
         confetti({
           particleCount: big ? 80 : 50,
           angle: 120,
           spread: big ? 80 : 55,
           origin: { x: 1 },
-          colors: ['#2563EB', '#38BDF8', '#10B981'],
+          colors: ['#059669', '#2DD4BF', '#10B981'],
         });
       }, 200);
     } catch {
@@ -142,12 +166,112 @@ export default function App() {
     });
   }, []);
 
+  // Shared: finish a round with a winner (used by moves AND clock timeouts)
+  const applyWin = useCallback(
+    (winResult, moveCount, byTimeout = false) => {
+      const w = winResult.winner;
+      setWinner(w);
+      setWinningCells(byTimeout ? [] : winResult.winningCells);
+
+      const winnerKey = w.toLowerCase();
+      const winnerName = playerNames[w] || `Player ${w}`;
+      const durationSec = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
+
+      setScores((prev) => {
+        const nextScores = { ...prev, [winnerKey]: prev[winnerKey] + 1 };
+        saveScores(nextScores);
+
+        setRoundSummary({
+          winner: w,
+          winnerName,
+          moveCount,
+          durationSec,
+          scores: nextScores,
+          roundNumber,
+          byTimeout,
+        });
+
+        if (winsNeeded !== null && nextScores[winnerKey] >= winsNeeded) {
+          setMatchWinner(w);
+          triggerCelebration(true); // big celebration for match win
+          sounds.playWin();
+        } else {
+          triggerCelebration(false);
+          sounds.playWin();
+        }
+
+        return nextScores;
+      });
+
+      updateStreakOnWin(w);
+
+      // Record to persistent match history
+      setMatchHistory((prevHistory) =>
+        recordMatch(prevHistory, {
+          gameMode,
+          difficulty: gameMode === 'ai' ? difficulty : undefined,
+          winner: w,
+          winnerName,
+          playerX: playerNames.X,
+          playerO: playerNames.O,
+          moveCount,
+          roundNumber,
+          byTimeout,
+        })
+      );
+    },
+    [playerNames, gameMode, difficulty, roundNumber, winsNeeded, updateStreakOnWin, triggerCelebration]
+  );
+
+  // Shared: finish a round in a draw
+  const applyDraw = useCallback(
+    (moveCount) => {
+      setIsDraw(true);
+      const durationSec = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
+
+      setScores((prev) => {
+        const nextScores = { ...prev, draws: prev.draws + 1 };
+        saveScores(nextScores);
+
+        setRoundSummary({
+          winner: null,
+          winnerName: 'Draw',
+          moveCount,
+          durationSec,
+          scores: nextScores,
+          roundNumber,
+        });
+
+        return nextScores;
+      });
+
+      updateStreakOnDraw();
+
+      setMatchHistory((prevHistory) =>
+        recordMatch(prevHistory, {
+          gameMode,
+          difficulty: gameMode === 'ai' ? difficulty : undefined,
+          winner: null,
+          winnerName: 'Draw',
+          playerX: playerNames.X,
+          playerO: playerNames.O,
+          moveCount,
+          roundNumber,
+        })
+      );
+
+      sounds.playDraw();
+    },
+    [playerNames, gameMode, difficulty, roundNumber, updateStreakOnDraw]
+  );
+
   // Process a move at index
   const makeMove = useCallback(
     (index, player) => {
       const nextBoard = [...board];
       nextBoard[index] = player;
       setBoard(nextBoard);
+      setMoveHistory((prev) => [...prev, { index, player }]);
 
       sounds.playMove(player);
 
@@ -155,141 +279,48 @@ export default function App() {
       const winResult = checkWinner(nextBoard);
 
       if (winResult.winner) {
-        setWinner(winResult.winner);
-        setWinningCells(winResult.winningCells);
-
-        const winnerKey = winResult.winner.toLowerCase();
-        const winnerName = playerNames[winResult.winner] || `Player ${winResult.winner}`;
-        const durationSec = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
-
-        // Update scores and check if match is over
-        setScores((prev) => {
-          const nextScores = { ...prev, [winnerKey]: prev[winnerKey] + 1 };
-          saveScores(nextScores);
-
-          setRoundSummary({
-            winner: winResult.winner,
-            winnerName,
-            moveCount,
-            durationSec,
-            scores: nextScores,
-            roundNumber,
-          });
-
-          // Check match winner after score update
-          if (winsNeeded !== null && nextScores[winnerKey] >= winsNeeded) {
-            setMatchWinner(winResult.winner);
-            triggerCelebration(true); // big celebration for match win
-            sounds.playWin();
-          } else {
-            triggerCelebration(false);
-            sounds.playWin();
-          }
-
-          return nextScores;
-        });
-
-        updateStreakOnWin(winResult.winner);
-
-        // Record to persistent match history
-        setMatchHistory((prevHistory) =>
-          recordMatch(prevHistory, {
-            gameMode,
-            difficulty: gameMode === 'ai' ? difficulty : undefined,
-            winner: winResult.winner,
-            winnerName,
-            playerX: playerNames.X,
-            playerO: playerNames.O,
-            moveCount,
-            roundNumber,
-          })
-        );
-
+        applyWin(winResult, moveCount);
         return;
       }
 
       if (checkDraw(nextBoard, null)) {
-        setIsDraw(true);
-        const durationSec = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
-
-        setScores((prev) => {
-          const nextScores = { ...prev, draws: prev.draws + 1 };
-          saveScores(nextScores);
-
-          setRoundSummary({
-            winner: null,
-            winnerName: 'Draw',
-            moveCount,
-            durationSec,
-            scores: nextScores,
-            roundNumber,
-          });
-
-          return nextScores;
-        });
-
-        updateStreakOnDraw();
-
-        // Record draw to persistent match history
-        setMatchHistory((prevHistory) =>
-          recordMatch(prevHistory, {
-            gameMode,
-            difficulty: gameMode === 'ai' ? difficulty : undefined,
-            winner: null,
-            winnerName: 'Draw',
-            playerX: playerNames.X,
-            playerO: playerNames.O,
-            moveCount,
-            roundNumber,
-          })
-        );
-
-        sounds.playDraw();
+        applyDraw(moveCount);
         return;
       }
 
       setCurrentPlayer(player === 'X' ? 'O' : 'X');
     },
-    [
-      board,
-      playerNames,
-      gameMode,
-      difficulty,
-      roundNumber,
-      winsNeeded,
-      updateStreakOnWin,
-      updateStreakOnDraw,
-      triggerCelebration,
-    ]
+    [board, applyWin, applyDraw]
   );
 
   // Handle human click on a cell
   const handleCellClick = useCallback(
     (index) => {
       if (board[index] || winner || isDraw || isAiThinking || matchWinner) return;
-      if (gameMode === 'ai' && currentPlayer !== 'X') return;
+      if (gameMode === 'ai' && currentPlayer !== humanSide) return;
       makeMove(index, currentPlayer);
     },
-    [board, winner, isDraw, isAiThinking, matchWinner, gameMode, currentPlayer, makeMove]
+    [board, winner, isDraw, isAiThinking, matchWinner, gameMode, currentPlayer, humanSide, makeMove]
   );
 
-  // AI Turn effect
+  // AI Turn effect — the AI moves whenever it is the AI's turn, including first.
+  // NOTE: isAiThinking is intentionally NOT a dependency here. Setting it inside
+  // the effect must not re-run (and thus clear) the scheduled AI timer.
   useEffect(() => {
     if (
       gameMode === 'ai' &&
-      currentPlayer === 'O' &&
+      currentPlayer === aiPlayer &&
       !winner &&
       !isDraw &&
-      !isAiThinking &&
       !matchWinner
     ) {
       setIsAiThinking(true);
       const delay = Math.floor(Math.random() * 200) + 450;
 
       aiTimeoutRef.current = setTimeout(() => {
-        const aiMove = getAiMove(board, difficulty, 'O', 'X');
+        const aiMove = getAiMove(board, difficulty, aiPlayer, humanSide);
         if (aiMove !== null) {
-          makeMove(aiMove, 'O');
+          makeMove(aiMove, aiPlayer);
         }
         setIsAiThinking(false);
       }, delay);
@@ -298,12 +329,13 @@ export default function App() {
     return () => {
       if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
     };
-  }, [gameMode, currentPlayer, winner, isDraw, board, difficulty, makeMove, isAiThinking, matchWinner]);
+  }, [gameMode, currentPlayer, aiPlayer, humanSide, winner, isDraw, board, difficulty, makeMove, matchWinner]);
 
-  // Restart current round (preserves match scores)
-  const handleRestart = useCallback(() => {
+  // Reset the board state for a fresh round (keeps scores & clocks)
+  const resetBoardForNewRound = useCallback(() => {
     if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
-    setBoard(Array(9).fill(null));
+    setBoard(emptyBoard(boardSize));
+    setMoveHistory([]);
     setCurrentPlayer('X');
     setWinner(null);
     setWinningCells([]);
@@ -311,49 +343,80 @@ export default function App() {
     setIsAiThinking(false);
     setRoundSummary(null);
     roundStartTimeRef.current = Date.now();
+  }, [boardSize]);
+
+  // Restart current round (preserves match scores & running clocks)
+  const handleRestart = useCallback(() => {
+    resetBoardForNewRound();
     if (!matchWinner) {
       setRoundNumber((prev) => (isGameOver ? prev + 1 : prev));
     }
     sounds.playReset();
-  }, [isGameOver, matchWinner]);
+  }, [resetBoardForNewRound, matchWinner, isGameOver]);
 
-  // Start a completely new match (resets scores + round counter)
+  // Start a completely new match (resets scores + round counter + clocks)
   const handleNewMatch = useCallback(() => {
-    if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+    resetBoardForNewRound();
     const cleanScores = { x: 0, o: 0, draws: 0 };
     setScores(cleanScores);
     saveScores(cleanScores);
     setMatchWinner(null);
     setRoundNumber(1);
-    setRoundSummary(null);
-    roundStartTimeRef.current = Date.now();
-    setBoard(Array(9).fill(null));
-    setCurrentPlayer('X');
-    setWinner(null);
-    setWinningCells([]);
-    setIsDraw(false);
-    setIsAiThinking(false);
+    setClocks({ X: clockBankSeconds, O: clockBankSeconds });
     sounds.playReset();
-  }, []);
+  }, [resetBoardForNewRound, clockBankSeconds]);
 
-  // Rematch — same players, names, mode, difficulty and match length; just resets the board + scores
+  // Rematch — identical to a new match (same settings)
   const handleRematch = useCallback(() => {
+    handleNewMatch();
+  }, [handleNewMatch]);
+
+  // Undo: remove the human's last move (plus the AI's reply when vs AI)
+  const handleUndo = useCallback(() => {
+    if (matchWinner || winner || isDraw) return;
+
+    const history = [...moveHistory];
+    let popCount = 0;
+    let nextPlayer = currentPlayer;
+
+    if (gameMode === 'ai') {
+      if (currentPlayer !== humanSide || isAiThinking) return;
+      if (history.length < 2) return;
+      popCount = 2;
+      nextPlayer = humanSide;
+    } else {
+      if (history.length < 1) return;
+      popCount = 1;
+      nextPlayer = history[history.length - 1].player;
+    }
+
     if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
-    const cleanScores = { x: 0, o: 0, draws: 0 };
-    setScores(cleanScores);
-    saveScores(cleanScores);
-    setMatchWinner(null);
-    setRoundNumber(1);
-    setRoundSummary(null);
-    roundStartTimeRef.current = Date.now();
-    setBoard(Array(9).fill(null));
-    setCurrentPlayer('X');
+
+    const newHistory = history.slice(0, history.length - popCount);
+    const newBoard = emptyBoard(boardSize);
+    newHistory.forEach((m) => {
+      newBoard[m.index] = m.player;
+    });
+
+    setBoard(newBoard);
+    setMoveHistory(newHistory);
+    setCurrentPlayer(nextPlayer);
     setWinner(null);
     setWinningCells([]);
     setIsDraw(false);
     setIsAiThinking(false);
+    setRoundSummary(null);
     sounds.playReset();
-  }, []);
+  }, [matchWinner, winner, isDraw, moveHistory, gameMode, currentPlayer, humanSide, isAiThinking, boardSize]);
+
+  // Whether the Undo button should be enabled right now
+  const canUndo =
+    !matchWinner &&
+    !winner &&
+    !isDraw &&
+    (gameMode === 'ai'
+      ? currentPlayer === humanSide && !isAiThinking && moveHistory.length >= 2
+      : moveHistory.length >= 1);
 
   // Request confirmation to reset scores
   const handleRequestResetStats = useCallback(() => {
@@ -373,11 +436,12 @@ export default function App() {
         saveStreak(cleanStreak);
         setMatchWinner(null);
         setRoundNumber(1);
+        setClocks({ X: clockBankSeconds, O: clockBankSeconds });
         handleRestart();
         setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
       },
     });
-  }, [handleRestart]);
+  }, [handleRestart, clockBankSeconds]);
 
   // Request confirmation to clear game history
   const handleRequestClearHistory = useCallback(() => {
@@ -406,21 +470,25 @@ export default function App() {
 
       let nextNames = playerNames;
       if (newMode === 'ai') {
-        nextNames = {
-          X: playerNames.X === 'Player 1' ? 'You' : playerNames.X,
-          O: 'Flowai',
-        };
+        const human = humanSide;
+        const ai = human === 'X' ? 'O' : 'X';
+        const currentHumanName = playerNames[human];
+        const humanName =
+          currentHumanName && !['Flowai', 'Player 1', 'Player 2'].includes(currentHumanName)
+            ? currentHumanName
+            : 'You';
+        nextNames = { ...playerNames, [human]: humanName, [ai]: 'Flowai' };
       } else {
         nextNames = {
-          X: playerNames.X === 'You' ? 'Player 1' : playerNames.X,
-          O: playerNames.O === 'Flowai' ? 'Player 2' : playerNames.O,
+          X: ['You', 'Flowai'].includes(playerNames.X) ? 'Player 1' : playerNames.X,
+          O: ['You', 'Flowai'].includes(playerNames.O) ? 'Player 2' : playerNames.O,
         };
       }
       setPlayerNames(nextNames);
       savePlayerNames(nextNames);
       handleNewMatch();
     },
-    [gameMode, playerNames, handleNewMatch]
+    [gameMode, playerNames, humanSide, handleNewMatch]
   );
 
   // Difficulty change handler (persisted)
@@ -441,6 +509,74 @@ export default function App() {
     },
     [matchLength, handleNewMatch]
   );
+
+  // Human side change handler (persisted, AI mode only)
+  const handleHumanSideChange = useCallback(
+    (newSide) => {
+      if (newSide === humanSide) return;
+      sounds.playClick();
+      setHumanSide(newSide);
+      saveHumanSide(newSide);
+
+      const ai = newSide === 'X' ? 'O' : 'X';
+      const humanName = playerNames[newSide] === 'Flowai' ? 'You' : playerNames[newSide] || 'You';
+      setPlayerNames((prev) => {
+        const nextNames = { ...prev, [newSide]: humanName, [ai]: 'Flowai' };
+        savePlayerNames(nextNames);
+        return nextNames;
+      });
+
+      handleNewMatch();
+    },
+    [humanSide, playerNames, handleNewMatch]
+  );
+
+  // Board size change handler (persisted) — starts a fresh match on the new grid
+  const handleBoardSizeChange = useCallback(
+    (size) => {
+      if (size === boardSize) return;
+      sounds.playClick();
+      setBoardSize(size);
+      saveBoardSize(size);
+
+      if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+      const cleanScores = { x: 0, o: 0, draws: 0 };
+      setScores(cleanScores);
+      saveScores(cleanScores);
+      setMatchWinner(null);
+      setRoundNumber(1);
+      setRoundSummary(null);
+      roundStartTimeRef.current = Date.now();
+      setBoard(emptyBoard(size));
+      setMoveHistory([]);
+      setCurrentPlayer('X');
+      setWinner(null);
+      setWinningCells([]);
+      setIsDraw(false);
+      setIsAiThinking(false);
+      setClocks({ X: clockBankSeconds, O: clockBankSeconds });
+      sounds.playReset();
+    },
+    [boardSize, clockBankSeconds]
+  );
+
+  // Match clock handlers (persisted)
+  const handleToggleClock = useCallback(() => {
+    sounds.playClick();
+    const next = !clockEnabled;
+    setClockEnabled(next);
+    saveClockEnabled(next);
+    if (next) {
+      setClocks({ X: clockBankSeconds, O: clockBankSeconds });
+    }
+  }, [clockEnabled, clockBankSeconds]);
+
+  const handleClockMinutesChange = useCallback((mins) => {
+    sounds.playClick();
+    setClockMinutes(mins);
+    saveClockMinutes(mins);
+    setClocks({ X: mins * 60, O: mins * 60 });
+  }, []);
 
   // Update individual player name (persisted)
   const handleUpdatePlayerName = useCallback((playerKey, newName) => {
@@ -497,6 +633,31 @@ export default function App() {
     setShowHistory((prev) => !prev);
   }, []);
 
+  // ---- Match Clock: tick the active player down every second ----
+  const clockRunning = clockEnabled && !winner && !isDraw && !matchWinner;
+
+  useEffect(() => {
+    if (!clockRunning) return;
+    const id = setInterval(() => {
+      setClocks((prev) => ({
+        ...prev,
+        [currentPlayer]: Math.max(0, prev[currentPlayer] - 1),
+      }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [clockRunning, currentPlayer]);
+
+  // ---- Match Clock: a player who runs out of time loses the round ----
+  useEffect(() => {
+    if (!clockEnabled || winner || isDraw || matchWinner) return;
+    if (clocks.X <= 0 || clocks.O <= 0) {
+      const loser = clocks.X <= 0 ? 'X' : 'O';
+      const other = loser === 'X' ? 'O' : 'X';
+      const moveCount = board.filter(Boolean).length;
+      applyWin({ winner: other, winningCells: [] }, moveCount, true);
+    }
+  }, [clockEnabled, clocks, winner, isDraw, matchWinner, board, applyWin]);
+
   return (
     <div className="app-container">
       <Header
@@ -525,6 +686,14 @@ export default function App() {
           onDifficultyChange={handleDifficultyChange}
           matchLength={matchLength}
           onMatchLengthChange={handleMatchLengthChange}
+          humanSide={humanSide}
+          onHumanSideChange={handleHumanSideChange}
+          boardSize={boardSize}
+          onBoardSizeChange={handleBoardSizeChange}
+          clockEnabled={clockEnabled}
+          onToggleClock={handleToggleClock}
+          clockMinutes={clockMinutes}
+          onClockMinutesChange={handleClockMinutesChange}
           disabled={isAiThinking}
         />
 
@@ -534,10 +703,13 @@ export default function App() {
             playerNames={playerNames}
             onUpdatePlayerName={handleUpdatePlayerName}
             gameMode={gameMode}
+            humanSide={humanSide}
             currentPlayer={currentPlayer}
             isGameOver={isGameOver}
             streak={streak}
             matchLength={matchLength}
+            clockEnabled={clockEnabled}
+            clocks={clocks}
           />
 
           <GameStatus
@@ -549,10 +721,12 @@ export default function App() {
             matchWinner={matchWinner}
             roundNumber={roundNumber}
             matchLength={matchLength}
+            aiPlayer={aiPlayer}
           />
 
           <Board
             board={board}
+            boardSize={boardSize}
             winningCells={winningCells}
             onCellClick={handleCellClick}
             isGameOver={isGameOver || isAiThinking || Boolean(matchWinner)}
@@ -571,6 +745,8 @@ export default function App() {
             onResetAll={handleRequestResetStats}
             onNewMatch={handleNewMatch}
             onRematch={handleRematch}
+            onUndo={handleUndo}
+            canUndo={canUndo}
             isGameOver={isGameOver}
             matchWinner={matchWinner}
             matchLength={matchLength}

@@ -7,16 +7,17 @@
 class SoundEngine {
   constructor() {
     this.ctx = null;
-    this.muted = false;
+    // Sound is muted by default — the player opts in by unmuting.
+    this.muted = true;
 
-    // Load saved mute preference if available
+    // Load saved mute preference if available (overrides the default)
     try {
       const saved = localStorage.getItem('samuel_ttt_sound_muted');
       if (saved !== null) {
         this.muted = JSON.parse(saved);
       }
     } catch {
-      this.muted = false;
+      this.muted = true;
     }
   }
 

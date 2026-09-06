@@ -4,12 +4,12 @@
    ========================================================================== */
 
 :root {
-  /* Brand Colours (DRD 2.3) */
-  --primary: #2563EB;
-  --primary-dark: #1D4ED8;
-  --primary-light: #DBEAFE;
-  --primary-subtle: #EFF6FF;
-  --primary-glow: rgba(37, 99, 235, 0.25);
+  /* Brand Colours — Emerald */
+  --primary: #059669;
+  --primary-dark: #047857;
+  --primary-light: #A7F3D0;
+  --primary-subtle: #ECFDF5;
+  --primary-glow: rgba(5, 150, 105, 0.25);
   
   --background: #F8FAFC;
   --surface: #FFFFFF;
@@ -19,17 +19,17 @@
   --border: #CBD5E1;
   --border-light: #E2E8F0;
   
-  --success: #16A34A;
-  --success-dark: #15803D;
-  --success-light: #DCFCE7;
-  --success-glow: rgba(22, 163, 74, 0.3);
+  --success: #10B981;
+  --success-dark: #059669;
+  --success-light: #D1FAE5;
+  --success-glow: rgba(16, 185, 129, 0.3);
 
   --danger: #DC2626;
   --danger-dark: #B91C1C;
   --danger-light: #FEE2E2;
 
-  --player-x: #2563EB;
-  --player-o: #0284C7;
+  --player-x: #059669;
+  --player-o: #0D9488;
   --draw-color: #64748B;
   --streak-color: #EA580C;
 
@@ -46,11 +46,11 @@
 }
 
 [data-color-mode="dark"] {
-  --primary: #3B82F6;
-  --primary-dark: #2563EB;
-  --primary-light: #1E3A8A;
-  --primary-subtle: #172554;
-  --primary-glow: rgba(59, 130, 246, 0.35);
+  --primary: #34D399;
+  --primary-dark: #10B981;
+  --primary-light: #064E3B;
+  --primary-subtle: #022C22;
+  --primary-glow: rgba(52, 211, 153, 0.35);
 
   --background: #0B1120;
   --surface: #1E293B;
@@ -60,17 +60,17 @@
   --border: #334155;
   --border-light: #1E293B;
 
-  --success: #22C55E;
-  --success-dark: #16A34A;
+  --success: #34D399;
+  --success-dark: #10B981;
   --success-light: #064E3B;
-  --success-glow: rgba(34, 197, 94, 0.35);
+  --success-glow: rgba(52, 211, 153, 0.35);
 
   --danger: #EF4444;
   --danger-dark: #DC2626;
   --danger-light: #450A0A;
 
-  --player-x: #60A5FA;
-  --player-o: #38BDF8;
+  --player-x: #34D399;
+  --player-o: #2DD4BF;
   --draw-color: #94A3B8;
   --streak-color: #F97316;
 
@@ -179,6 +179,46 @@
 [data-theme="glassmorphism"][data-color-mode="dark"] .stats-modal-card {
   background: rgba(30, 41, 59, 0.7);
   border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Forest Theme — deep woodland greens with earthy brown accents */
+[data-theme="forest"] {
+  --primary: #2F6B3F;
+  --primary-dark: #1F4A2A;
+  --primary-light: #C9E4CB;
+  --primary-subtle: #EAF3EC;
+  --primary-glow: rgba(47, 107, 63, 0.28);
+
+  --player-x: #2F6B3F;
+  --player-o: #8B5E3C;
+  --streak-color: #B45309;
+
+  --background: #F4F7F2;
+  --surface: #FFFFFF;
+  --surface-hover: #EAF0E8;
+  --text: #1C2B1F;
+  --muted: #5C6F5E;
+  --border: #CBD6C7;
+  --border-light: #E2EAE0;
+}
+[data-theme="forest"][data-color-mode="dark"] {
+  --primary: #7BC98A;
+  --primary-dark: #5CA96C;
+  --primary-light: #1E3A24;
+  --primary-subtle: #152A1A;
+  --primary-glow: rgba(123, 201, 138, 0.3);
+
+  --player-x: #7BC98A;
+  --player-o: #C9A87C;
+  --streak-color: #F59E0B;
+
+  --background: #0B1510;
+  --surface: #12211A;
+  --surface-hover: #1B2F24;
+  --text: #E9F2EA;
+  --muted: #9DB0A0;
+  --border: #26402E;
+  --border-light: #1A2B20;
 }
 
 /* Reset & Base */
@@ -834,9 +874,9 @@ html, body {
 }
 
 .status-turn-o {
-  background: #E0F2FE;
+  background: #F0FDFA;
   color: var(--player-o);
-  border: 1px solid #BAE6FD;
+  border: 1px solid #99F6E4;
 }
 
 .status-winner {
@@ -1295,8 +1335,8 @@ html, body {
 }
 
 .stat-card.stat-o {
-  border-color: #BAE6FD;
-  background: #E0F2FE;
+  border-color: #99F6E4;
+  background: #F0FDFA;
 }
 
 .stat-card.stat-draw {
@@ -1695,7 +1735,7 @@ html, body {
 .text-success { color: var(--success); }
 .text-draw { color: var(--draw-color); }
 .text-ai { color: #7E22CE; }
-.text-local { color: #0284C7; }
+.text-local { color: #0D9488; }
 
 @keyframes fade-in {
   from { opacity: 0; }
@@ -1764,15 +1804,15 @@ html, body {
 }
 
 [data-color-mode="dark"] .status-turn-x {
-  background: #172554;
-  color: #93C5FD;
-  border-color: #1E40AF;
+  background: #064E3B;
+  color: #6EE7B7;
+  border-color: #047857;
 }
 
 [data-color-mode="dark"] .status-turn-o {
-  background: #082F49;
-  color: #7DD3FC;
-  border-color: #0369A1;
+  background: #134E4A;
+  color: #5EEAD4;
+  border-color: #0F766E;
 }
 
 [data-color-mode="dark"] .status-winner {
@@ -1802,26 +1842,26 @@ html, body {
 [data-color-mode="dark"] .score-name-input {
   background: #0F172A;
   color: #F8FAFC;
-  border-color: #3B82F6;
+  border-color: #10B981;
 }
 
 [data-color-mode="dark"] .difficulty-container {
-  background: #172554;
-  border-color: #1E40AF;
+  background: #064E3B;
+  border-color: #047857;
 }
 
 [data-color-mode="dark"] .difficulty-label {
-  color: #93C5FD;
+  color: #6EE7B7;
 }
 
 [data-color-mode="dark"] .stat-card.stat-o {
-  background: #082F49;
-  border-color: #0369A1;
+  background: #134E4A;
+  border-color: #0F766E;
 }
 
 [data-color-mode="dark"] .stat-card.stat-x {
-  background: #172554;
-  border-color: #1E40AF;
+  background: #064E3B;
+  border-color: #047857;
 }
 
 [data-color-mode="dark"] .stat-card.stat-draw {
@@ -1979,5 +2019,428 @@ html, body {
 
   .cell-button {
     font-size: 2rem;
+  }
+}
+
+
+/* ==========================================================================
+   New Controls: Play As / Board Size / Match Clock
+   ========================================================================== */
+
+/* Play As (side selector) */
+.side-selector-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--primary-subtle);
+  border: 1px solid var(--primary-light);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+}
+
+.side-selector-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.side-selector-pills {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.side-selector-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid transparent;
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.side-selector-pill:hover:not(:disabled) {
+  border-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.side-selector-pill.active {
+  background: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 6px var(--primary-glow);
+}
+
+.side-selector-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.side-symbol {
+  font-weight: 800;
+}
+
+/* Board Size selector */
+.board-size-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+}
+
+.board-size-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.board-size-pills {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.board-size-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.board-size-pill:hover:not(:disabled) {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.board-size-pill.active {
+  background: var(--text);
+  color: var(--surface);
+  font-weight: 700;
+}
+
+.board-size-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Match Clock controls */
+.clock-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #FFF7ED;
+  border: 1px solid #FFEDD5;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+}
+
+.clock-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #9A3412;
+}
+
+.clock-label {
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: #9A3412;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.clock-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.clock-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid transparent;
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.clock-toggle:hover:not(:disabled) {
+  border-color: #FDBA74;
+  color: #9A3412;
+}
+
+.clock-toggle.active {
+  background: #EA580C;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
+}
+
+.clock-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.clock-minutes-pills {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.clock-minute-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.clock-minute-pill:hover:not(:disabled) {
+  border-color: #FDBA74;
+  color: #9A3412;
+}
+
+.clock-minute-pill.active {
+  background: #FDBA74;
+  color: #7C2D12;
+  font-weight: 700;
+}
+
+.clock-minute-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+[data-color-mode="dark"] .clock-container {
+  background: #2D1A0E;
+  border-color: #59250B;
+}
+
+[data-color-mode="dark"] .clock-label-row,
+[data-color-mode="dark"] .clock-label {
+  color: #FDBA74;
+}
+
+/* ==========================================================================
+   Tidier Header: icon buttons + More menu
+   ========================================================================== */
+
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.header-icon-btn:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.header-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.header-menu {
+  position: relative;
+}
+
+.header-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 170px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 50;
+  animation: fade-in 0.15s ease-out;
+}
+
+.header-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+}
+
+.header-dropdown-item:hover {
+  background: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.header-dropdown-item svg {
+  color: var(--muted);
+}
+
+/* ==========================================================================
+   Match Clock readout + Undo button + larger boards
+   ========================================================================== */
+
+.clock-readout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-readout.clock-active {
+  color: var(--primary);
+}
+
+.clock-readout.clock-low {
+  color: var(--danger);
+  animation: pulse-badge 1s infinite alternate;
+}
+
+.board-grid.size-4 .cell-button {
+  font-size: 1.9rem;
+}
+
+.board-grid.size-5 .cell-button {
+  font-size: 1.45rem;
+}
+
+.actions-section {
+  flex-wrap: wrap;
+}
+
+.btn-undo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.875rem 0.85rem;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-undo:hover:not(:disabled) {
+  background: var(--background);
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.btn-undo:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.btn-undo:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments for the new controls */
+@media (max-width: 480px) {
+  .side-selector-container,
+  .board-size-container,
+  .clock-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .side-selector-pills,
+  .board-size-pills {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .side-selector-pill,
+  .board-size-pill {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .clock-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .clock-minutes-pills {
+    flex: 1;
+    justify-content: flex-end;
   }
 }

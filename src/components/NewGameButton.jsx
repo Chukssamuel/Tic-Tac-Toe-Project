@@ -1,11 +1,13 @@
 import React from 'react';
-import { RotateCcw, Trash2, Swords, RefreshCw } from 'lucide-react';
+import { RotateCcw, Trash2, Swords, RefreshCw, Undo2 } from 'lucide-react';
 
 export default function NewGameButton({
   onRestart,
   onResetAll,
   onNewMatch,
   onRematch,
+  onUndo,
+  canUndo,
   isGameOver,
   matchWinner,
   matchLength,
@@ -50,6 +52,20 @@ export default function NewGameButton({
 
   return (
     <div className="actions-section">
+      {onUndo && (
+        <button
+          type="button"
+          className="btn-undo"
+          onClick={onUndo}
+          disabled={!canUndo || disabled}
+          title="Undo your last move"
+          aria-label="Undo last move"
+        >
+          <Undo2 size={16} aria-hidden="true" />
+          <span>Undo</span>
+        </button>
+      )}
+
       <button
         type="button"
         className="btn-primary"

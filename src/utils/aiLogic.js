@@ -1,9 +1,16 @@
 /**
  * Samuel Tic-Tac-Toe — AI Opponent & Difficulty Engine
  * Built for Chukwuma Samuel
+ *
+ * Supports 3x3, 4x4 and 5x5 boards, and playing as either X or O.
  */
 
-import { WINNING_COMBINATIONS, checkWinner, checkDraw } from './gameLogic.js';
+import {
+  checkWinner,
+  checkDraw,
+  getWinningLines,
+  getBoardSizeFromCells,
+} from './gameLogic.js';
 
 export const DIFFICULTY = {
   EASY: 'easy',
@@ -45,7 +52,39 @@ export function findImmediateWinningMove(board, player) {
 }
 
 /**
- * Minimax algorithm implementation for unbeatable Hard AI.
+ * The center cell(s) of an NxN board. Odd sizes have a single center
+ * (e.g. 3x3 -> [4], 5x5 -> [12]); even sizes have four (4x4 -> [5,6,9,10]).
+ * @param {number} size
+ * @returns {number[]}
+ */
+export function getCenterCells(size) {
+  const mids = [];
+  if (size % 2 === 1) {
+    mids.push(Math.floor(size / 2));
+  } else {
+    mids.push(size / 2 - 1, size / 2);
+  }
+
+  const cells = [];
+  for (const r of mids) {
+    for (const c of mids) {
+      cells.push(r * size + c);
+    }
+  }
+  return cells;
+}
+
+/**
+ * The four corner cells of an NxN board.
+ * @param {number} size
+ * @returns {number[]}
+ */
+export function getCornerCells(size) {
+  return [0, size - 1, size * (size - 1), size * size - 1];
+}
+
+/**
+ * Minimax algorithm implementation for unbeatable Hard AI on 3x3.
  * @param {Array<string|null>} board
  * @param {number} depth
  * @param {boolean} isMaximizing
@@ -102,14 +141,54 @@ function minimax(board, depth, isMaximizing, aiPlayer, humanPlayer) {
 }
 
 /**
+ * Strong-but-not-unbeatable heuristic for boards larger than 3x3,
+ * where a full minimax search would be too slow.
+ * Priority: win now > block human win > center > corner > random.
+ * @param {Array<string|null>} board
+ * @param {string} aiPlayer
+ * @param {string} humanPlayer
+ * @returns {number|null}
+ */
+function heuristicMove(board, aiPlayer, humanPlayer) {
+  const size = getBoardSizeFromCells(board.length);
+  const availableMoves = getAvailableMoves(board);
+  if (availableMoves.length === 0) return null;
+
+  // 1. Take an immediate win
+  const winMove = findImmediateWinningMove(board, aiPlayer);
+  if (winMove !== null) return winMove;
+
+  // 2. Block the human's immediate win
+  const blockMove = findImmediateWinningMove(board, humanPlayer);
+  if (blockMove !== null) return blockMove;
+
+  // 3. Prefer a center cell
+  const centers = getCenterCells(size).filter((idx) => availableMoves.includes(idx));
+  if (centers.length > 0 && Math.random() < 0.8) {
+    return centers[Math.floor(Math.random() * centers.length)];
+  }
+
+  // 4. Prefer a corner
+  const corners = getCornerCells(size).filter((idx) => availableMoves.includes(idx));
+  if (corners.length > 0 && Math.random() < 0.6) {
+    return corners[Math.floor(Math.random() * corners.length)];
+  }
+
+  // 5. Otherwise a random move
+  return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+}
+
+/**
  * Calculates the next best move for the AI based on the chosen difficulty.
+ * The AI can play as either 'X' or 'O'.
  * @param {Array<string|null>} board
  * @param {'easy'|'medium'|'hard'} difficulty
- * @param {string} aiPlayer ('O' by default)
- * @param {string} humanPlayer ('X' by default)
+ * @param {string} aiPlayer ('X' or 'O')
+ * @param {string} humanPlayer ('X' or 'O')
  * @returns {number|null} Index of the chosen move
  */
 export function getAiMove(board, difficulty = DIFFICULTY.MEDIUM, aiPlayer = 'O', humanPlayer = 'X') {
+  const size = getBoardSizeFromCells(board.length);
   const availableMoves = getAvailableMoves(board);
   if (availableMoves.length === 0) return null;
 
@@ -119,44 +198,42 @@ export function getAiMove(board, difficulty = DIFFICULTY.MEDIUM, aiPlayer = 'O',
     return availableMoves[randomIndex];
   }
 
-  // 2. Medium: Smart tactical rules (takes win, blocks opponent win, prioritizes center)
+  // 2. Medium: Smart tactical rules (takes win, blocks opponent win, prefers center)
   if (difficulty === DIFFICULTY.MEDIUM) {
-    // Check if AI can win immediately
     const winMove = findImmediateWinningMove(board, aiPlayer);
     if (winMove !== null) return winMove;
 
-    // Check if human is about to win -> block it!
     const blockMove = findImmediateWinningMove(board, humanPlayer);
     if (blockMove !== null) return blockMove;
 
-    // Take center cell (4) with 75% probability if available
-    if (availableMoves.includes(4) && Math.random() < 0.75) {
-      return 4;
+    const centers = getCenterCells(size).filter((idx) => availableMoves.includes(idx));
+    if (centers.length > 0 && Math.random() < 0.75) {
+      return centers[Math.floor(Math.random() * centers.length)];
     }
 
-    // Take random corner with 50% probability
-    const corners = [0, 2, 6, 8].filter((idx) => availableMoves.includes(idx));
+    const corners = getCornerCells(size).filter((idx) => availableMoves.includes(idx));
     if (corners.length > 0 && Math.random() < 0.5) {
       return corners[Math.floor(Math.random() * corners.length)];
     }
 
-    // Otherwise random available move
-    const randomIndex = Math.floor(Math.random() * availableMoves.length);
-    return availableMoves[randomIndex];
+    return availableMoves[Math.floor(Math.random() * availableMoves.length)];
   }
 
-  // 3. Hard: Unbeatable Minimax
+  // 3. Hard: Unbeatable Minimax on 3x3; strong heuristic on larger boards
   if (difficulty === DIFFICULTY.HARD) {
-    // If board is empty, picking a corner or center is fast and optimal
-    if (availableMoves.length === 9) {
-      const openings = [0, 2, 4, 6, 8];
-      return openings[Math.floor(Math.random() * openings.length)];
+    if (size === 3) {
+      // If board is empty, picking a corner or center is fast and optimal
+      if (availableMoves.length === 9) {
+        const openings = [0, 2, 4, 6, 8];
+        return openings[Math.floor(Math.random() * openings.length)];
+      }
+
+      const result = minimax([...board], 0, true, aiPlayer, humanPlayer);
+      return result.move ?? availableMoves[0];
     }
 
-    const result = minimax([...board], 0, true, aiPlayer, humanPlayer);
-    return result.move ?? availableMoves[0];
+    return heuristicMove(board, aiPlayer, humanPlayer);
   }
 
   return availableMoves[0];
 }
-

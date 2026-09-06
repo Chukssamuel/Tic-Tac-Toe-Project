@@ -7,19 +7,17 @@ export default function ThemeToggle({ colorMode, onToggle }) {
   return (
     <button
       type="button"
-      className="theme-toggle-btn"
+      className="header-icon-btn"
       onClick={onToggle}
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       aria-pressed={isDark}
     >
       {isDark ? (
-        <Sun size={16} className="theme-toggle-icon sun-icon" aria-hidden="true" />
+        <Sun size={18} className="sun-icon" aria-hidden="true" />
       ) : (
-        <Moon size={16} className="theme-toggle-icon moon-icon" aria-hidden="true" />
+        <Moon size={18} className="moon-icon" aria-hidden="true" />
       )}
-      <span className="theme-toggle-label">{isDark ? 'Light' : 'Dark'}</span>
     </button>
   );
 }
-

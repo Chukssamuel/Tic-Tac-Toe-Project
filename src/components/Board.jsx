@@ -1,12 +1,13 @@
 import React from 'react';
 import Cell from './Cell';
 
-export default function Board({ board, winningCells, onCellClick, isGameOver }) {
+export default function Board({ board, boardSize, winningCells, onCellClick, isGameOver }) {
   return (
     <div
-      className="board-grid"
+      className={`board-grid size-${boardSize}`}
       role="grid"
-      aria-label="3 by 3 Tic-Tac-Toe Board"
+      aria-label={`${boardSize} by ${boardSize} Tic-Tac-Toe Board`}
+      style={{ gridTemplateColumns: `repeat(${boardSize}, 1fr)` }}
     >
       {board.map((cellValue, index) => (
         <Cell
@@ -21,4 +22,3 @@ export default function Board({ board, winningCells, onCellClick, isGameOver }) 
     </div>
   );
 }
-

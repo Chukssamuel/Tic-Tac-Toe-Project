@@ -4,9 +4,9 @@ import { X, Palette, Check, Sparkles } from 'lucide-react';
 const THEMES = [
   {
     id: 'classic',
-    name: 'Classic Blue',
-    desc: 'Signature clean blue aesthetic with sharp contrasts',
-    colors: ['#2563EB', '#0284C7', '#16A34A'],
+    name: 'Classic Emerald',
+    desc: 'Signature clean emerald aesthetic with sharp contrasts',
+    colors: ['#059669', '#0D9488', '#F59E0B'],
   },
   {
     id: 'neon',
@@ -31,6 +31,12 @@ const THEMES = [
     name: 'Glassmorphism',
     desc: 'Translucent frosted glass with soft glowing aurora gradients',
     colors: ['#8B5CF6', '#06B6D4', '#EC4899'],
+  },
+  {
+    id: 'forest',
+    name: 'Forest',
+    desc: 'Deep woodland greens with warm earthy brown accents',
+    colors: ['#2F6B3F', '#8B5E3C', '#C9E4CB'],
   },
 ];
 

@@ -10,6 +10,7 @@ export default function GameStatus({
   matchWinner,
   roundNumber,
   matchLength,
+  aiPlayer,
 }) {
   const isMatchMode = matchLength !== 'single';
 
@@ -41,7 +42,7 @@ export default function GameStatus({
       >
         <Bot size={20} className="bot-thinking-icon" aria-hidden="true" />
         <span className="thinking-text">
-          {playerNames.O} is thinking
+          {playerNames[aiPlayer] || 'AI'} is thinking
           <span className="dot-pulse">.</span>
           <span className="dot-pulse">.</span>
           <span className="dot-pulse">.</span>

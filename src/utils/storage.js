@@ -13,6 +13,10 @@ const STORAGE_KEYS = {
   MATCH_LENGTH: 'samuel_ttt_match_length',
   COLOR_MODE: 'samuel_ttt_color_mode',
   THEME: 'samuel_ttt_theme',
+  HUMAN_SIDE: 'samuel_ttt_human_side',
+  BOARD_SIZE: 'samuel_ttt_board_size',
+  CLOCK_ENABLED: 'samuel_ttt_clock_enabled',
+  CLOCK_MINUTES: 'samuel_ttt_clock_minutes',
 };
 
 const DEFAULT_SCORES = { x: 0, o: 0, draws: 0 };
@@ -20,10 +24,11 @@ const DEFAULT_STREAK = { player: null, count: 0, best: 0 };
 const DEFAULT_NAMES = { X: 'Player 1', O: 'Player 2' };
 
 /**
- * Safely loads JSON data from localStorage with fallback
+ * Safely loads JSON data from localStorage with fallback.
+ * Bail out if `localStorage` is unavailable (e.g. server-side rendering).
  */
 export function getStoredItem(key, fallback) {
-  if (typeof window === 'undefined' && typeof localStorage === 'undefined') {
+  if (typeof localStorage === 'undefined') {
     return fallback;
   }
   try {
@@ -37,10 +42,11 @@ export function getStoredItem(key, fallback) {
 }
 
 /**
- * Safely writes JSON data to localStorage
+ * Safely writes JSON data to localStorage.
+ * Bail out if `localStorage` is unavailable (e.g. server-side rendering).
  */
 export function setStoredItem(key, value) {
-  if (typeof window === 'undefined' && typeof localStorage === 'undefined') {
+  if (typeof localStorage === 'undefined') {
     return;
   }
   try {
@@ -63,7 +69,11 @@ export function loadInitialState() {
     difficulty: getStoredItem(STORAGE_KEYS.DIFFICULTY, 'medium'),
     matchLength: getStoredItem(STORAGE_KEYS.MATCH_LENGTH, 'single'), // 'single' | 3 | 5
     colorMode: getStoredItem(STORAGE_KEYS.COLOR_MODE, 'light'), // 'light' | 'dark'
-    activeTheme: getStoredItem(STORAGE_KEYS.THEME, 'classic'), // 'classic' | 'neon' | 'cyberpunk' | 'minimal' | 'glassmorphism'
+    activeTheme: getStoredItem(STORAGE_KEYS.THEME, 'classic'), // 'classic' | 'neon' | 'cyberpunk' | 'minimal' | 'glassmorphism' | 'forest'
+    humanSide: getStoredItem(STORAGE_KEYS.HUMAN_SIDE, 'X'), // 'X' | 'O' (vs AI)
+    boardSize: getStoredItem(STORAGE_KEYS.BOARD_SIZE, 3), // 3 | 4 | 5
+    clockEnabled: getStoredItem(STORAGE_KEYS.CLOCK_ENABLED, false),
+    clockMinutes: getStoredItem(STORAGE_KEYS.CLOCK_MINUTES, 2), // 1 | 2 | 3 | 5
   };
 }
 
@@ -124,10 +134,38 @@ export function saveColorMode(mode) {
 }
 
 /**
- * Persists Active Theme ('classic' | 'neon' | 'cyberpunk' | 'minimal' | 'glassmorphism')
+ * Persists Active Theme ('classic' | 'neon' | 'cyberpunk' | 'minimal' | 'glassmorphism' | 'forest')
  */
 export function saveTheme(theme) {
   setStoredItem(STORAGE_KEYS.THEME, theme);
+}
+
+/**
+ * Persists the human's side ('X' | 'O') when playing vs the AI
+ */
+export function saveHumanSide(side) {
+  setStoredItem(STORAGE_KEYS.HUMAN_SIDE, side);
+}
+
+/**
+ * Persists the board size (3 | 4 | 5)
+ */
+export function saveBoardSize(size) {
+  setStoredItem(STORAGE_KEYS.BOARD_SIZE, size);
+}
+
+/**
+ * Persists whether the match clock is enabled
+ */
+export function saveClockEnabled(enabled) {
+  setStoredItem(STORAGE_KEYS.CLOCK_ENABLED, enabled);
+}
+
+/**
+ * Persists the match clock time bank in minutes
+ */
+export function saveClockMinutes(minutes) {
+  setStoredItem(STORAGE_KEYS.CLOCK_MINUTES, minutes);
 }
 
 /**
@@ -135,7 +173,7 @@ export function saveTheme(theme) {
  */
 export function recordMatch(history, matchData) {
   const newRecord = {
-    id: `match_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+    id: `match_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     timestamp: Date.now(),
     ...matchData,
   };
