@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
   BOARD_SIZE: 'samuel_ttt_board_size',
   CLOCK_ENABLED: 'samuel_ttt_clock_enabled',
   CLOCK_MINUTES: 'samuel_ttt_clock_minutes',
+  PIECE_COLORS: 'samuel_ttt_piece_colors',
 };
 
 const DEFAULT_SCORES = { x: 0, o: 0, draws: 0 };
@@ -74,6 +75,7 @@ export function loadInitialState() {
     boardSize: getStoredItem(STORAGE_KEYS.BOARD_SIZE, 3), // 3 | 4 | 5
     clockEnabled: getStoredItem(STORAGE_KEYS.CLOCK_ENABLED, false),
     clockMinutes: getStoredItem(STORAGE_KEYS.CLOCK_MINUTES, 2), // 1 | 2 | 3 | 5
+    pieceColors: getStoredItem(STORAGE_KEYS.PIECE_COLORS, { X: null, O: null }),
   };
 }
 
@@ -166,6 +168,14 @@ export function saveClockEnabled(enabled) {
  */
 export function saveClockMinutes(minutes) {
   setStoredItem(STORAGE_KEYS.CLOCK_MINUTES, minutes);
+}
+
+/**
+ * Persists custom piece colours for X and O.
+ * A value of `null` means "use the active theme's colour".
+ */
+export function savePieceColors(colors) {
+  setStoredItem(STORAGE_KEYS.PIECE_COLORS, colors);
 }
 
 /**

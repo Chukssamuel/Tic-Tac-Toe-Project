@@ -31,6 +31,7 @@ import {
   saveClockMinutes,
   recordMatch,
   saveMatchHistory,
+  savePieceColors,
 } from './utils/storage';
 
 const emptyBoard = (size) => Array(size * size).fill(null);
@@ -63,6 +64,9 @@ export default function App() {
 
   // Active Theme (persisted)
   const [activeTheme, setActiveTheme] = useState(initialData.activeTheme || 'classic');
+
+  // Custom piece colours (persisted) — null = use the theme's colour
+  const [pieceColors, setPieceColors] = useState(initialData.pieceColors || { X: null, O: null });
 
   // Match Clock (persisted): enabled flag + minutes per player
   const [clockEnabled, setClockEnabled] = useState(Boolean(initialData.clockEnabled));
@@ -597,6 +601,23 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', activeTheme);
   }, [activeTheme]);
 
+  // Apply custom piece colours as inline CSS variables.
+  // Inline styles on <html> beat any theme selector, so custom colours
+  // correctly override the active theme (and fall back when cleared).
+  useEffect(() => {
+    const root = document.documentElement;
+    if (pieceColors.X) {
+      root.style.setProperty('--player-x', pieceColors.X);
+    } else {
+      root.style.removeProperty('--player-x');
+    }
+    if (pieceColors.O) {
+      root.style.setProperty('--player-o', pieceColors.O);
+    } else {
+      root.style.removeProperty('--player-o');
+    }
+  }, [pieceColors]);
+
   // Theme toggle handler (light/dark)
   const handleToggleTheme = useCallback(() => {
     sounds.playClick();
@@ -612,6 +633,23 @@ export default function App() {
     sounds.playClick();
     setActiveTheme(themeId);
     saveTheme(themeId);
+  }, []);
+
+  // Custom piece colour handlers
+  const handlePieceColorChange = useCallback((playerKey, color) => {
+    sounds.playClick();
+    setPieceColors((prev) => {
+      const next = { ...prev, [playerKey]: color };
+      savePieceColors(next);
+      return next;
+    });
+  }, []);
+
+  const handleResetPieceColors = useCallback(() => {
+    sounds.playClick();
+    const next = { X: null, O: null };
+    setPieceColors(next);
+    savePieceColors(next);
   }, []);
 
   // Sound toggle handler
@@ -775,6 +813,9 @@ export default function App() {
         <ThemeSelectorModal
           activeTheme={activeTheme}
           onSelectTheme={handleSelectTheme}
+          pieceColors={pieceColors}
+          onPieceColorChange={handlePieceColorChange}
+          onResetPieceColors={handleResetPieceColors}
           onClose={() => setShowThemes(false)}
         />
       )}

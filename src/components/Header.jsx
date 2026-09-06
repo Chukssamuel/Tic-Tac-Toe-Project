@@ -76,7 +76,7 @@ export default function Header({
                   onClick={() => closeAndRun(onOpenThemes)}
                 >
                   <Palette size={16} aria-hidden="true" />
-                  <span>Themes</span>
+                  <span>Customize</span>
                 </button>
                 <button
                   type="button"
