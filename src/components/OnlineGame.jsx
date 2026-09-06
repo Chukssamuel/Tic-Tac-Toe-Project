@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Board from './Board';
 import GameStatus from './GameStatus';
+import CelebrationBanner from './CelebrationBanner';
 import {
   createRoom,
   joinRoom,
@@ -93,6 +94,7 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
   const [chatText, setChatText] = useState('');
+  const [showBanner, setShowBanner] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreList, setRestoreList] = useState([]);
   const [restoreLoading, setRestoreLoading] = useState(false);
@@ -101,6 +103,7 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
   const unsubscribeRef = useRef(null);
   const chatLogRef = useRef(null);
   const recordedMatchIdRef = useRef(null);
+  const bannerShownRef = useRef(null);
 
   // --- read ?room= from the URL and auto-join ---
   useEffect(() => {
@@ -158,6 +161,14 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
     });
   }, [room, role, onMatchComplete]);
 
+  // --- pop the celebratory banner once per concluded match ---
+  useEffect(() => {
+    if (room && room.status === 'over' && bannerShownRef.current !== room.matchId) {
+      bannerShownRef.current = room.matchId;
+      setShowBanner(true);
+    }
+  }, [room]);
+
   const startWatching = useCallback((code) => {
     if (unsubscribeRef.current) unsubscribeRef.current();
     unsubscribeRef.current = watchRoom(code, (data, err) => {
@@ -185,6 +196,7 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
         matchTarget,
       });
       recordedMatchIdRef.current = null;
+      bannerShownRef.current = null;
       setRoomCode(code);
       setRole('host');
       setPhase('inroom');
@@ -204,6 +216,7 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
     try {
       await joinRoom(code, guestName.trim() || 'Player 2');
       recordedMatchIdRef.current = null;
+      bannerShownRef.current = null;
       setRoomCode(code.toUpperCase().trim());
       setRole('guest');
       setPhase('inroom');
@@ -220,12 +233,14 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
     if (unsubscribeRef.current) unsubscribeRef.current();
     unsubscribeRef.current = null;
     recordedMatchIdRef.current = null;
+    bannerShownRef.current = null;
     setRoom(null);
     setRoomCode('');
     setRole(null);
     setPhase('menu');
     setError('');
     setChatText('');
+    setShowBanner(false);
   };
 
   const handleCopy = async () => {
@@ -368,6 +383,13 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
 
   const matchLabel =
     room?.matchTarget === 1 ? 'Single Game' : `First to ${room?.matchTarget} wins`;
+
+  const bannerWinnerName = room?.matchWinner
+    ? room.matchWinner === 'X'
+      ? xName
+      : oName
+    : null;
+  const bannerIsDraw = room?.status === 'over' && !room?.matchWinner;
 
   // ---------------------------------------------------------------- menu
   if (phase === 'menu') {
@@ -768,6 +790,22 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
           </button>
         </form>
       </div>
+
+      <CelebrationBanner
+        open={showBanner}
+        winnerName={bannerWinnerName}
+        isDraw={bannerIsDraw}
+        xName={xName}
+        oName={oName}
+        scoreX={room.scoreX ?? 0}
+        scoreO={room.scoreO ?? 0}
+        draws={room.draws ?? 0}
+        onClose={() => setShowBanner(false)}
+        onPlayAgain={() => {
+          setShowBanner(false);
+          playAgain(roomCode);
+        }}
+      />
     </div>
   );
 }
