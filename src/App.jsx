@@ -11,6 +11,7 @@ import ThemeSelectorModal from './components/ThemeSelectorModal';
 import StatsView from './components/StatsView';
 import GameHistoryView from './components/GameHistoryView';
 import ConfirmDialog from './components/ConfirmDialog';
+import CelebrationBanner from './components/CelebrationBanner';
 import Footer from './components/Footer';
 import { checkWinner, checkDraw } from './utils/gameLogic';
 import { getAiMove } from './utils/aiLogic';
@@ -120,6 +121,10 @@ export default function App() {
 
   // Sound Mute State
   const [isMuted, setIsMuted] = useState(sounds.isMuted());
+
+  // Celebration banner (offline modes)
+  const [showBanner, setShowBanner] = useState(false);
+  const bannerShownRef = useRef(false);
 
   const isGameOver = Boolean(winner || isDraw);
   const aiPlayer = humanSide === 'X' ? 'O' : 'X';
