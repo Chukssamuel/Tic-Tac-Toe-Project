@@ -666,6 +666,48 @@ export default function App() {
     if (!nextMuted) sounds.playClick();
   }, []);
 
+  // Record a completed ONLINE match into the local stats & history
+  const handleOnlineMatchComplete = useCallback(
+    (result) => {
+      const { winner, winnerName, playerX, playerO, scoreX, scoreO, draws, mySide } = result;
+
+      setMatchHistory((prev) =>
+        recordMatch(prev, {
+          gameMode: 'online',
+          winner,
+          winnerName,
+          playerX,
+          playerO,
+          moveCount: 0,
+          onlineScore: `${scoreX}–${scoreO}${draws ? ` (${draws} draw${draws > 1 ? 's' : ''})` : ''}`,
+        })
+      );
+
+      if (winner) {
+        const key = winner.toLowerCase();
+        setScores((prev) => {
+          const next = { ...prev, [key]: prev[key] + 1 };
+          saveScores(next);
+          return next;
+        });
+        if (mySide === winner) {
+          updateStreakOnWin(winner);
+        } else {
+          updateStreakOnDraw();
+        }
+      } else {
+        // Drawn match (single game)
+        setScores((prev) => {
+          const next = { ...prev, draws: prev.draws + 1 };
+          saveScores(next);
+          return next;
+        });
+        updateStreakOnDraw();
+      }
+    },
+    [updateStreakOnWin, updateStreakOnDraw]
+  );
+
   // Stats view toggle
   const handleToggleStats = useCallback(() => {
     sounds.playClick();
@@ -756,7 +798,10 @@ export default function App() {
               </div>
             }
           >
-            <OnlineGame onExit={() => handleModeChange('pvp')} />
+            <OnlineGame
+              onExit={() => handleModeChange('pvp')}
+              onMatchComplete={handleOnlineMatchComplete}
+            />
           </Suspense>
         ) : (
         <div className="game-card">

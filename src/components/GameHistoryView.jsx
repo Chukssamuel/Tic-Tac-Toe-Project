@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, History, Trophy, MinusCircle, Clock, Bot, Users, Trash2 } from 'lucide-react';
+import { X, History, Trophy, MinusCircle, Clock, Bot, Users, Trash2, Globe } from 'lucide-react';
 
 function formatTimestamp(ts) {
   if (!ts) return '';
@@ -110,6 +110,11 @@ export default function GameHistoryView({ matchHistory, onClearHistory, onClose 
                             <Bot size={12} />
                             <span>AI {match.difficulty ? `(${match.difficulty})` : ''}</span>
                           </>
+                        ) : match.gameMode === 'online' ? (
+                          <>
+                            <Globe size={12} />
+                            <span>Online</span>
+                          </>
                         ) : (
                           <>
                             <Users size={12} />
@@ -119,7 +124,11 @@ export default function GameHistoryView({ matchHistory, onClearHistory, onClose 
                       </div>
 
                       <div className="history-meta-row">
-                        <span className="history-moves">{match.moveCount} moves</span>
+                        <span className="history-moves">
+                          {match.gameMode === 'online'
+                            ? match.onlineScore || 'Online match'
+                            : `${match.moveCount} moves`}
+                        </span>
                         <span className="history-dot">&bull;</span>
                         <span className="history-time" title={match.timestamp ? new Date(match.timestamp).toLocaleString() : ''}>
                           <Clock size={11} />

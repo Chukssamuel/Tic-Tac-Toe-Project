@@ -89,6 +89,7 @@ export async function createRoom({ hostName = 'Player 1', boardSize = 3, matchTa
     scoreO: 0,
     draws: 0,
     round: 1,
+    matchId: 1,
     matchWinner: null,
     status: 'lobby', // lobby | playing | over
     hostName,
@@ -195,15 +196,25 @@ export async function makeMove(code, index, player) {
 
   let { scoreX, scoreO, draws, round } = data;
   let matchWinner = null;
+  let status = 'playing';
 
   if (win.winner) {
     if (win.winner === 'X') scoreX += 1;
     else scoreO += 1;
-    if (scoreX >= data.matchTarget || scoreO >= data.matchTarget) {
+    if (data.matchTarget === 1) {
+      // Single game: every round is the whole match
       matchWinner = win.winner;
+      status = 'over';
+    } else if (scoreX >= data.matchTarget || scoreO >= data.matchTarget) {
+      matchWinner = win.winner;
+      status = 'over';
     }
   } else if (draw) {
     draws += 1;
+    if (data.matchTarget === 1) {
+      // A drawn single game also ends the match (with no winner)
+      status = 'over';
+    }
   }
 
   await updateDoc(ref, {
@@ -218,7 +229,7 @@ export async function makeMove(code, index, player) {
     draws,
     round,
     matchWinner,
-    status: matchWinner ? 'over' : 'playing',
+    status,
     lastActiveAt: serverTimestamp(),
   });
 
@@ -236,7 +247,10 @@ export async function playAgain(code) {
   if (!snap.exists()) return;
 
   const data = snap.data();
-  const rematch = Boolean(data.matchWinner);
+  // The match is over whenever the room status is 'over' (single game won or
+  // drawn, or a series reaching its target). A drawn round inside a series is
+  // NOT a rematch — it just advances to the next round.
+  const rematch = data.status === 'over';
 
   await updateDoc(ref, {
     board: Array(data.boardSize * data.boardSize).fill(null),
@@ -249,6 +263,7 @@ export async function playAgain(code) {
     scoreX: rematch ? 0 : data.scoreX,
     scoreO: rematch ? 0 : data.scoreO,
     draws: rematch ? 0 : data.draws,
+    matchId: rematch ? (data.matchId || 1) + 1 : data.matchId || 1,
     matchWinner: null,
     status: 'playing',
     lastActiveAt: serverTimestamp(),

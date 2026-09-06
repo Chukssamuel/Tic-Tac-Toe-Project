@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Trophy, Award, Zap, BarChart2, Activity, Target } from 'lucide-react';
+import { X, Trophy, Award, Zap, BarChart2, Activity, Target, Globe } from 'lucide-react';
 
 export default function StatsView({ matchHistory, playerNames, onClose }) {
   const totalGames = matchHistory.length;
@@ -12,9 +12,10 @@ export default function StatsView({ matchHistory, playerNames, onClose }) {
   const oWinRate = totalGames > 0 ? Math.round((oWins / totalGames) * 100) : 0;
   const drawRate = totalGames > 0 ? Math.round((draws / totalGames) * 100) : 0;
 
-  // AI games vs Local games
+  // AI games vs Local games vs Online games
   const aiGames = matchHistory.filter((m) => m.gameMode === 'ai');
   const localGames = matchHistory.filter((m) => m.gameMode === 'pvp');
+  const onlineGames = matchHistory.filter((m) => m.gameMode === 'online');
 
   const humanVsAiWins = aiGames.filter((m) => m.winner === 'X').length;
   const aiVsHumanWins = aiGames.filter((m) => m.winner === 'O').length;
@@ -160,6 +161,16 @@ export default function StatsView({ matchHistory, playerNames, onClose }) {
                       <span className="record-name">2-Player Local:</span>
                       <span className="record-val">
                         {localGames.length > 0 ? `${localGames.length} played` : 'No local games'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="record-item">
+                    <Globe size={16} className="record-icon text-ai" />
+                    <div>
+                      <span className="record-name">Play Online:</span>
+                      <span className="record-val">
+                        {onlineGames.length > 0 ? `${onlineGames.length} played` : 'No online games'}
                       </span>
                     </div>
                   </div>

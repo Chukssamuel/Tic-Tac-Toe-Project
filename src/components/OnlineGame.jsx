@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Send,
   Swords,
+  Share2,
 } from 'lucide-react';
 import Board from './Board';
 import GameStatus from './GameStatus';
@@ -75,7 +76,7 @@ function SidePicker({ mySide, oppSide, onPick }) {
   );
 }
 
-export default function OnlineGame({ onExit }) {
+export default function OnlineGame({ onExit, onMatchComplete }) {
   const [phase, setPhase] = useState('menu'); // menu | inroom | error
   const [role, setRole] = useState(null); // 'host' | 'guest'
   const [roomCode, setRoomCode] = useState('');
@@ -88,10 +89,12 @@ export default function OnlineGame({ onExit }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
   const [chatText, setChatText] = useState('');
 
   const unsubscribeRef = useRef(null);
   const chatLogRef = useRef(null);
+  const recordedMatchIdRef = useRef(null);
 
   // --- read ?room= from the URL and auto-join ---
   useEffect(() => {
@@ -124,6 +127,31 @@ export default function OnlineGame({ onExit }) {
     }
   }, [room?.chat?.length]);
 
+  // --- record the match result locally (stats & history) once per match ---
+  useEffect(() => {
+    if (!room || !onMatchComplete) return;
+    if (room.status !== 'over') return;
+    if (recordedMatchIdRef.current === room.matchId) return;
+
+    recordedMatchIdRef.current = room.matchId;
+    const mySide = role === 'host' ? room.hostSide : room.guestSide;
+    const xName = room.hostSide === 'X' ? room.hostName || 'Player 1' : room.guestName || 'Player 2';
+    const oName = room.hostSide === 'O' ? room.hostName || 'Player 1' : room.guestName || 'Player 2';
+
+    onMatchComplete({
+      winner: room.matchWinner || null,
+      winnerName: room.matchWinner ? (room.matchWinner === 'X' ? xName : oName) : 'Draw',
+      playerX: xName,
+      playerO: oName,
+      scoreX: room.scoreX,
+      scoreO: room.scoreO,
+      draws: room.draws,
+      mySide,
+      matchTarget: room.matchTarget,
+      boardSize: room.boardSize,
+    });
+  }, [room, role, onMatchComplete]);
+
   const startWatching = useCallback((code) => {
     if (unsubscribeRef.current) unsubscribeRef.current();
     unsubscribeRef.current = watchRoom(code, (data, err) => {
@@ -150,6 +178,7 @@ export default function OnlineGame({ onExit }) {
         boardSize,
         matchTarget,
       });
+      recordedMatchIdRef.current = null;
       setRoomCode(code);
       setRole('host');
       setPhase('inroom');
@@ -168,6 +197,7 @@ export default function OnlineGame({ onExit }) {
     setError('');
     try {
       await joinRoom(code, guestName.trim() || 'Player 2');
+      recordedMatchIdRef.current = null;
       setRoomCode(code.toUpperCase().trim());
       setRole('guest');
       setPhase('inroom');
@@ -183,6 +213,7 @@ export default function OnlineGame({ onExit }) {
   const handleLeave = () => {
     if (unsubscribeRef.current) unsubscribeRef.current();
     unsubscribeRef.current = null;
+    recordedMatchIdRef.current = null;
     setRoom(null);
     setRoomCode('');
     setRole(null);
@@ -199,6 +230,51 @@ export default function OnlineGame({ onExit }) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       window.prompt('Copy this link to share:', link);
+    }
+  };
+
+  // --- share the match/round result ---
+  const buildShareText = () => {
+    if (!room) return '🎮 Playing Samuel Tic-Tac-Toe!';
+    const xName =
+      room.hostSide === 'X' ? room.hostName || 'Player 1' : room.guestName || 'Player 2';
+    const oName =
+      room.hostSide === 'O' ? room.hostName || 'Player 1' : room.guestName || 'Player 2';
+
+    if (room.matchWinner) {
+      const wName = room.matchWinner === 'X' ? xName : oName;
+      const lName = room.matchWinner === 'X' ? oName : xName;
+      return `🏆 ${wName} beat ${lName} ${room.scoreX}–${room.scoreO}${
+        room.draws ? ` (${room.draws} draw${room.draws > 1 ? 's' : ''})` : ''
+      } in Samuel Tic-Tac-Toe!`;
+    }
+    if (room.winner) {
+      const wName = room.winner === 'X' ? xName : oName;
+      return `🎯 ${wName} won Round ${room.round} — series ${room.scoreX}–${room.scoreO} in Samuel Tic-Tac-Toe!`;
+    }
+    if (room.isDraw) {
+      return `🤝 Round ${room.round} was a draw — series ${room.scoreX}–${room.scoreO} in Samuel Tic-Tac-Toe.`;
+    }
+    return '🎮 Playing Samuel Tic-Tac-Toe!';
+  };
+
+  const handleShare = async () => {
+    const text = buildShareText();
+    const url = `${window.location.origin}${window.location.pathname}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Samuel Tic-Tac-Toe', text, url });
+        setShared(true);
+        setTimeout(() => setShared(false), 2500);
+      } else {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        setShared(true);
+        setTimeout(() => setShared(false), 2500);
+      }
+    } catch {
+      // share cancelled or clipboard unavailable — ignore
     }
   };
 
@@ -536,8 +612,18 @@ export default function OnlineGame({ onExit }) {
         {(roundOver || room.matchWinner) && (
           <div className="online-actions-row">
             <button type="button" className="btn-primary online-btn" onClick={() => playAgain(roomCode)}>
-              {room.matchWinner ? <RefreshCw size={16} /> : <Swords size={16} />}
-              <span>{room.matchWinner ? 'Rematch' : 'Next Round'}</span>
+              {room.matchTarget === 1 ? <RefreshCw size={16} /> : room.matchWinner ? <RefreshCw size={16} /> : <Swords size={16} />}
+              <span>
+                {room.matchTarget === 1
+                  ? 'Play Again'
+                  : room.matchWinner
+                  ? 'Rematch'
+                  : 'Next Round'}
+              </span>
+            </button>
+            <button type="button" className="btn-secondary online-btn" onClick={handleShare}>
+              {shared ? <Check size={15} /> : <Share2 size={15} />}
+              <span>{shared ? 'Shared!' : 'Share Result'}</span>
             </button>
             <button type="button" className="btn-secondary online-btn" onClick={handleLeave}>
               <LogOut size={15} />
