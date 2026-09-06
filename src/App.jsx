@@ -482,7 +482,10 @@ export default function App() {
       saveGameMode(newMode);
 
       // Online play manages its own room state — leave the offline board untouched.
-      if (newMode === 'online') return;
+      if (newMode === 'online') {
+        setShowBanner(false);
+        return;
+      }
 
       let nextNames = playerNames;
       if (newMode === 'ai') {
@@ -795,6 +798,42 @@ export default function App() {
     }
   }, [clockEnabled, clocks, winner, isDraw, matchWinner, board, applyWin]);
 
+  // ---- Offline celebration banner ----
+  // In single-game mode the match ends when a round ends; in best-of-N the
+  // match ends when matchWinner is decided.
+  const offlineMatchOver =
+    gameMode !== 'online' &&
+    (matchLength === 'single' ? Boolean(winner || isDraw) : Boolean(matchWinner));
+
+  const bannerWinnerName =
+    matchLength === 'single'
+      ? winner
+        ? playerNames[winner]
+        : null
+      : matchWinner
+      ? playerNames[matchWinner]
+      : null;
+  const bannerIsDraw = matchLength === 'single' && isDraw;
+
+  useEffect(() => {
+    if (!offlineMatchOver) {
+      bannerShownRef.current = false;
+      return;
+    }
+    if (bannerShownRef.current) return;
+    bannerShownRef.current = true;
+    setShowBanner(true);
+  }, [offlineMatchOver]);
+
+  const handleBannerPlayAgain = useCallback(() => {
+    setShowBanner(false);
+    if (matchLength !== 'single' && matchWinner) {
+      handleNewMatch();
+    } else {
+      handleRestart();
+    }
+  }, [matchLength, matchWinner, handleNewMatch, handleRestart]);
+
   return (
     <div className="app-container">
       <Header
@@ -949,6 +988,19 @@ export default function App() {
         confirmLabel={confirmDialog.confirmLabel}
         onConfirm={confirmDialog.onConfirm}
         onCancel={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+      />
+
+      <CelebrationBanner
+        open={showBanner && gameMode !== 'online'}
+        winnerName={bannerWinnerName}
+        isDraw={bannerIsDraw}
+        xName={playerNames.X}
+        oName={playerNames.O}
+        scoreX={scores.x}
+        scoreO={scores.o}
+        draws={scores.draws}
+        onClose={() => setShowBanner(false)}
+        onPlayAgain={handleBannerPlayAgain}
       />
 
       <Footer />
