@@ -18,6 +18,7 @@ const STORAGE_KEYS = {
   CLOCK_ENABLED: 'samuel_ttt_clock_enabled',
   CLOCK_MINUTES: 'samuel_ttt_clock_minutes',
   PIECE_COLORS: 'samuel_ttt_piece_colors',
+  RESTORED_ROOMS: 'samuel_ttt_restored_rooms',
 };
 
 const DEFAULT_SCORES = { x: 0, o: 0, draws: 0 };
@@ -76,6 +77,7 @@ export function loadInitialState() {
     clockEnabled: getStoredItem(STORAGE_KEYS.CLOCK_ENABLED, false),
     clockMinutes: getStoredItem(STORAGE_KEYS.CLOCK_MINUTES, 2), // 1 | 2 | 3 | 5
     pieceColors: getStoredItem(STORAGE_KEYS.PIECE_COLORS, { X: null, O: null }),
+    restoredRooms: getStoredItem(STORAGE_KEYS.RESTORED_ROOMS, []),
   };
 }
 
@@ -176,6 +178,14 @@ export function saveClockMinutes(minutes) {
  */
 export function savePieceColors(colors) {
   setStoredItem(STORAGE_KEYS.PIECE_COLORS, colors);
+}
+
+/**
+ * Persists the list of room codes already restored into local history
+ * (prevents double-importing a past online match).
+ */
+export function saveRestoredRooms(codes) {
+  setStoredItem(STORAGE_KEYS.RESTORED_ROOMS, codes);
 }
 
 /**

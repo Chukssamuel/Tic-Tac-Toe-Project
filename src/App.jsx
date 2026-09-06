@@ -32,6 +32,7 @@ import {
   recordMatch,
   saveMatchHistory,
   savePieceColors,
+  saveRestoredRooms,
 } from './utils/storage';
 
 const emptyBoard = (size) => Array(size * size).fill(null);
@@ -100,6 +101,10 @@ export default function App() {
 
   // Match History (persisted)
   const [matchHistory, setMatchHistory] = useState(initialData.matchHistory);
+
+  // Room codes already restored into history (persisted, prevents double-import)
+  const [restoredRooms, setRestoredRooms] = useState(initialData.restoredRooms || []);
+  const restoredRoomsRef = useRef(initialData.restoredRooms || []);
 
   // Modals & Confirmation Dialog State
   const [showStats, setShowStats] = useState(false);
@@ -708,6 +713,18 @@ export default function App() {
     [updateStreakOnWin, updateStreakOnDraw]
   );
 
+  // Restore a PAST online match into the local stats & history.
+  const handleRestoreMatch = useCallback(
+    (result, roomCode) => {
+      if (restoredRoomsRef.current.includes(roomCode)) return;
+      restoredRoomsRef.current = [...restoredRoomsRef.current, roomCode];
+      saveRestoredRooms(restoredRoomsRef.current);
+      setRestoredRooms(restoredRoomsRef.current);
+      handleOnlineMatchComplete(result);
+    },
+    [handleOnlineMatchComplete]
+  );
+
   // Stats view toggle
   const handleToggleStats = useCallback(() => {
     sounds.playClick();
@@ -801,6 +818,8 @@ export default function App() {
             <OnlineGame
               onExit={() => handleModeChange('pvp')}
               onMatchComplete={handleOnlineMatchComplete}
+              restoredRooms={restoredRooms}
+              onRestoreMatch={handleRestoreMatch}
             />
           </Suspense>
         ) : (

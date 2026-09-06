@@ -13,6 +13,7 @@ import {
   Send,
   Swords,
   Share2,
+  History,
 } from 'lucide-react';
 import Board from './Board';
 import GameStatus from './GameStatus';
@@ -26,6 +27,7 @@ import {
   sendChat,
   heartbeat,
   matchLengthFromTarget,
+  listFinishedRooms,
 } from '../utils/online';
 import { sounds } from '../utils/soundEffects';
 
@@ -76,7 +78,7 @@ function SidePicker({ mySide, oppSide, onPick }) {
   );
 }
 
-export default function OnlineGame({ onExit, onMatchComplete }) {
+export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = [], onRestoreMatch }) {
   const [phase, setPhase] = useState('menu'); // menu | inroom | error
   const [role, setRole] = useState(null); // 'host' | 'guest'
   const [roomCode, setRoomCode] = useState('');
@@ -91,6 +93,10 @@ export default function OnlineGame({ onExit, onMatchComplete }) {
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
   const [chatText, setChatText] = useState('');
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoreList, setRestoreList] = useState([]);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreError, setRestoreError] = useState('');
 
   const unsubscribeRef = useRef(null);
   const chatLogRef = useRef(null);
@@ -278,6 +284,49 @@ export default function OnlineGame({ onExit, onMatchComplete }) {
     }
   };
 
+  // --- restore past results ---
+  const openRestore = async () => {
+    setRestoreOpen(true);
+    setRestoreLoading(true);
+    setRestoreError('');
+    try {
+      const list = await listFinishedRooms();
+      setRestoreList(list);
+    } catch (err) {
+      setRestoreError(String(err.message || err));
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
+
+  const doRestore = (r, mySide) => {
+    const xName = r.hostSide === 'X' ? r.hostName || 'Player 1' : r.guestName || 'Player 2';
+    const oName = r.hostSide === 'O' ? r.hostName || 'Player 1' : r.guestName || 'Player 2';
+    const winner = r.matchWinner || null;
+    if (typeof onRestoreMatch === 'function') {
+      onRestoreMatch(
+        {
+          winner,
+          winnerName: winner ? (winner === 'X' ? xName : oName) : 'Draw',
+          playerX: xName,
+          playerO: oName,
+          scoreX: r.scoreX,
+          scoreO: r.scoreO,
+          draws: r.draws,
+          mySide,
+          matchTarget: r.matchTarget,
+          boardSize: r.boardSize,
+        },
+        r.code
+      );
+    }
+  };
+
+  const roomNames = (r) => ({
+    x: r.hostSide === 'X' ? r.hostName || 'Player 1' : r.guestName || 'Player 2',
+    o: r.hostSide === 'O' ? r.hostName || 'Player 1' : r.guestName || 'Player 2',
+  });
+
   const handlePickSide = async (side) => {
     try {
       await setSide(roomCode, role, side);
@@ -430,6 +479,63 @@ export default function OnlineGame({ onExit, onMatchComplete }) {
                 <span>Join Room</span>
               </button>
             </div>
+          </div>
+
+          <div className="online-panel">
+            <span className="online-panel-title">Restore a past result</span>
+            {!restoreOpen ? (
+              <>
+                <p className="restore-hint">
+                  Played before results were being saved? Recover your finished games here.
+                </p>
+                <button type="button" className="btn-secondary online-btn" onClick={openRestore}>
+                  <History size={15} />
+                  <span>Recover finished games</span>
+                </button>
+              </>
+            ) : restoreLoading ? (
+              <div className="online-waiting-hint">
+                <Loader2 size={14} className="spin" />
+                <span>Looking up your games…</span>
+              </div>
+            ) : restoreError ? (
+              <p className="restore-hint restore-error">{restoreError}</p>
+            ) : restoreList.length === 0 ? (
+              <p className="restore-hint">No finished games found in your account.</p>
+            ) : (
+              <div className="restore-list">
+                {restoreList.map((r) => {
+                  const names = roomNames(r);
+                  const already = restoredRooms.includes(r.code);
+                  return (
+                    <div key={r.code} className={`restore-item ${already ? 'restore-done' : ''}`}>
+                      <div className="restore-item-main">
+                        <strong>
+                          {names.x} (X) vs {names.o} (O)
+                        </strong>
+                        <span className="restore-score">
+                          {r.scoreX}–{r.scoreO}
+                          {r.winner ? ` · ${r.winner === 'X' ? names.x : names.o} won` : ' · draw'}
+                        </span>
+                        <span className="restore-meta">Room {r.code}</span>
+                      </div>
+                      {already ? (
+                        <span className="restore-done-badge">✓ Recorded</span>
+                      ) : (
+                        <div className="restore-btns">
+                          <button type="button" onClick={() => doRestore(r, 'X')}>
+                            I was X
+                          </button>
+                          <button type="button" onClick={() => doRestore(r, 'O')}>
+                            I was O
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <button type="button" className="online-back" onClick={onExit}>

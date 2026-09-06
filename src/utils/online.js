@@ -12,6 +12,8 @@
 import { initializeApp } from 'firebase/app';
 import {
   getFirestore,
+  collection,
+  getDocs,
   doc,
   setDoc,
   updateDoc,
@@ -303,4 +305,31 @@ export async function heartbeat(code, role) {
   } catch {
     // ignore transient heartbeat failures
   }
+}
+
+/**
+ * Lists finished rooms (status === 'over'), newest first.
+ * Used by the "restore past result" flow. Reads all rooms and filters in
+ * memory so no Firestore composite index is required.
+ * @returns {Promise<Array<object>>}
+ */
+export async function listFinishedRooms() {
+  const firestore = initFirebase();
+  const snap = await getDocs(collection(firestore, 'rooms'));
+
+  const finished = [];
+  snap.forEach((d) => {
+    const data = d.data();
+    if (data.status === 'over') {
+      finished.push({ ...data, code: d.id });
+    }
+  });
+
+  finished.sort((a, b) => {
+    const ta = (a.lastActiveAt && (a.lastActiveAt.seconds || a.lastActiveAt)) || 0;
+    const tb = (b.lastActiveAt && (b.lastActiveAt.seconds || b.lastActiveAt)) || 0;
+    return tb - ta;
+  });
+
+  return finished;
 }
