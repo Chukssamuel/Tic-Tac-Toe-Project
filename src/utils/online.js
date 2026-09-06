@@ -254,6 +254,26 @@ export async function playAgain(code) {
   // NOT a rematch — it just advances to the next round.
   const rematch = data.status === 'over';
 
+  // Before resetting, permanently archive the finished match so results are
+  // never lost, even across many "Play Again" cycles.
+  const xName = data.hostSide === 'X' ? data.hostName || 'Player 1' : data.guestName || 'Player 2';
+  const oName = data.hostSide === 'O' ? data.hostName || 'Player 1' : data.guestName || 'Player 2';
+  const results = rematch
+    ? [
+        ...(data.results || []),
+        {
+          xName,
+          oName,
+          winner: data.matchWinner ?? null,
+          scoreX: data.scoreX || 0,
+          scoreO: data.scoreO || 0,
+          draws: data.draws || 0,
+          boardSize: data.boardSize,
+          ts: Date.now(),
+        },
+      ].slice(-50)
+    : data.results || [];
+
   await updateDoc(ref, {
     board: Array(data.boardSize * data.boardSize).fill(null),
     currentPlayer: 'X',
@@ -268,6 +288,7 @@ export async function playAgain(code) {
     matchId: rematch ? (data.matchId || 1) + 1 : data.matchId || 1,
     matchWinner: null,
     status: 'playing',
+    results,
     lastActiveAt: serverTimestamp(),
   });
 }
@@ -308,28 +329,58 @@ export async function heartbeat(code, role) {
 }
 
 /**
- * Lists finished rooms (status === 'over'), newest first.
- * Used by the "restore past result" flow. Reads all rooms and filters in
- * memory so no Firestore composite index is required.
- * @returns {Promise<Array<object>>}
+ * Lists finished online matches, newest first. Combines rooms currently in an
+ * "over" state with archived results (so games played and replayed via
+ * "Play Again" are all recoverable). Returns normalized entries:
+ * { id, code, xName, oName, winner, scoreX, scoreO, draws, boardSize, ts }
  */
 export async function listFinishedRooms() {
   const firestore = initFirebase();
   const snap = await getDocs(collection(firestore, 'rooms'));
 
-  const finished = [];
+  const entries = [];
   snap.forEach((d) => {
     const data = d.data();
+    const code = d.id;
+    const xName = data.hostSide === 'X' ? data.hostName || 'Player 1' : data.guestName || 'Player 2';
+    const oName = data.hostSide === 'O' ? data.hostName || 'Player 1' : data.guestName || 'Player 2';
+
     if (data.status === 'over') {
-      finished.push({ ...data, code: d.id });
+      const ts = data.lastActiveAt
+        ? data.lastActiveAt.seconds
+          ? data.lastActiveAt.seconds * 1000
+          : data.lastActiveAt
+        : 0;
+      entries.push({
+        id: code,
+        code,
+        xName,
+        oName,
+        winner: data.matchWinner ?? null,
+        scoreX: data.scoreX || 0,
+        scoreO: data.scoreO || 0,
+        draws: data.draws || 0,
+        boardSize: data.boardSize || 3,
+        ts,
+      });
     }
+
+    (data.results || []).forEach((r) => {
+      entries.push({
+        id: `${code}_${r.ts || 0}`,
+        code,
+        xName: r.xName || xName,
+        oName: r.oName || oName,
+        winner: r.winner ?? null,
+        scoreX: r.scoreX || 0,
+        scoreO: r.scoreO || 0,
+        draws: r.draws || 0,
+        boardSize: r.boardSize || data.boardSize || 3,
+        ts: r.ts || 0,
+      });
+    });
   });
 
-  finished.sort((a, b) => {
-    const ta = (a.lastActiveAt && (a.lastActiveAt.seconds || a.lastActiveAt)) || 0;
-    const tb = (b.lastActiveAt && (b.lastActiveAt.seconds || b.lastActiveAt)) || 0;
-    return tb - ta;
-  });
-
-  return finished;
+  entries.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return entries;
 }

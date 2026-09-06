@@ -671,20 +671,18 @@ export default function App() {
     if (!nextMuted) sounds.playClick();
   }, []);
 
-  // Record a completed ONLINE match into the local stats & history
-  const handleOnlineMatchComplete = useCallback(
-    (result) => {
-      const { winner, winnerName, playerX, playerO, scoreX, scoreO, draws, mySide } = result;
-
+  // Record any completed match (online / restored / manual) into stats & history
+  const handleRecordResult = useCallback(
+    ({ gameMode, winner, winnerName, playerX, playerO, mySide, extra = {} }) => {
       setMatchHistory((prev) =>
         recordMatch(prev, {
-          gameMode: 'online',
+          gameMode,
           winner,
           winnerName,
           playerX,
           playerO,
           moveCount: 0,
-          onlineScore: `${scoreX}–${scoreO}${draws ? ` (${draws} draw${draws > 1 ? 's' : ''})` : ''}`,
+          ...extra,
         })
       );
 
@@ -701,7 +699,7 @@ export default function App() {
           updateStreakOnDraw();
         }
       } else {
-        // Drawn match (single game)
+        // Drawn match
         setScores((prev) => {
           const next = { ...prev, draws: prev.draws + 1 };
           saveScores(next);
@@ -711,6 +709,40 @@ export default function App() {
       }
     },
     [updateStreakOnWin, updateStreakOnDraw]
+  );
+
+  // Record a completed ONLINE match into the local stats & history
+  const handleOnlineMatchComplete = useCallback(
+    (result) => {
+      const { winner, winnerName, playerX, playerO, scoreX, scoreO, draws, mySide } = result;
+      handleRecordResult({
+        gameMode: 'online',
+        winner,
+        winnerName,
+        playerX,
+        playerO,
+        mySide,
+        extra: {
+          onlineScore: `${scoreX}–${scoreO}${draws ? ` (${draws} draw${draws > 1 ? 's' : ''})` : ''}`,
+        },
+      });
+    },
+    [handleRecordResult]
+  );
+
+  // Log a result manually (e.g. games played before results were being saved)
+  const handleLogManualResult = useCallback(
+    ({ winner, winnerName, playerX, playerO }) => {
+      handleRecordResult({
+        gameMode: 'manual',
+        winner,
+        winnerName,
+        playerX,
+        playerO,
+        mySide: 'X',
+      });
+    },
+    [handleRecordResult]
   );
 
   // Restore a PAST online match into the local stats & history.
@@ -894,6 +926,7 @@ export default function App() {
         <GameHistoryView
           matchHistory={matchHistory}
           onClearHistory={handleRequestClearHistory}
+          onLogResult={handleLogManualResult}
           onClose={() => setShowHistory(false)}
         />
       )}

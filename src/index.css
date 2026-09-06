@@ -3208,3 +3208,106 @@ html, body {
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* ==========================================================================
+   History: share button + manual log form
+   ========================================================================== */
+
+.history-toolbar-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.history-log-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.history-log-btn:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary-light);
+}
+
+.history-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: var(--transition);
+  align-self: flex-end;
+}
+
+.history-share-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary-light);
+  background: var(--primary-subtle);
+}
+
+.log-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--background);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 0.9rem;
+}
+
+.log-form-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.log-form-row .online-input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.log-outcome-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.log-outcome-btn {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.log-outcome-btn:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.log-outcome-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+}

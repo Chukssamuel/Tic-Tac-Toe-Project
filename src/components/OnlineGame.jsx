@@ -300,32 +300,25 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
   };
 
   const doRestore = (r, mySide) => {
-    const xName = r.hostSide === 'X' ? r.hostName || 'Player 1' : r.guestName || 'Player 2';
-    const oName = r.hostSide === 'O' ? r.hostName || 'Player 1' : r.guestName || 'Player 2';
-    const winner = r.matchWinner || null;
+    const winner = r.winner || null;
     if (typeof onRestoreMatch === 'function') {
       onRestoreMatch(
         {
           winner,
-          winnerName: winner ? (winner === 'X' ? xName : oName) : 'Draw',
-          playerX: xName,
-          playerO: oName,
+          winnerName: winner ? (winner === 'X' ? r.xName : r.oName) : 'Draw',
+          playerX: r.xName,
+          playerO: r.oName,
           scoreX: r.scoreX,
           scoreO: r.scoreO,
           draws: r.draws,
           mySide,
-          matchTarget: r.matchTarget,
+          matchTarget: 1,
           boardSize: r.boardSize,
         },
-        r.code
+        r.id
       );
     }
   };
-
-  const roomNames = (r) => ({
-    x: r.hostSide === 'X' ? r.hostName || 'Player 1' : r.guestName || 'Player 2',
-    o: r.hostSide === 'O' ? r.hostName || 'Player 1' : r.guestName || 'Player 2',
-  });
 
   const handlePickSide = async (side) => {
     try {
@@ -505,17 +498,16 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
             ) : (
               <div className="restore-list">
                 {restoreList.map((r) => {
-                  const names = roomNames(r);
-                  const already = restoredRooms.includes(r.code);
+                  const already = restoredRooms.includes(r.id);
                   return (
-                    <div key={r.code} className={`restore-item ${already ? 'restore-done' : ''}`}>
+                    <div key={r.id} className={`restore-item ${already ? 'restore-done' : ''}`}>
                       <div className="restore-item-main">
                         <strong>
-                          {names.x} (X) vs {names.o} (O)
+                          {r.xName} (X) vs {r.oName} (O)
                         </strong>
                         <span className="restore-score">
                           {r.scoreX}–{r.scoreO}
-                          {r.winner ? ` · ${r.winner === 'X' ? names.x : names.o} won` : ' · draw'}
+                          {r.winner ? ` · ${r.winner === 'X' ? r.xName : r.oName} won` : ' · draw'}
                         </span>
                         <span className="restore-meta">Room {r.code}</span>
                       </div>
