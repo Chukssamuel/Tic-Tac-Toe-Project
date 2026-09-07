@@ -4,14 +4,39 @@ import { Share2, Check, X, RefreshCw } from 'lucide-react';
 
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
-/** Draws a centered text that shrinks to fit a max width. */
+/** Draws a centered text that shrinks to fit a max width (and truncates with an ellipsis if still too wide). */
 function drawFitText(ctx, text, x, y, maxWidth, size, weight = 700, align = 'center') {
   let s = size;
   ctx.textAlign = align;
-  do {
+  ctx.font = `${weight} ${s}px ${FONT}`;
+  while (ctx.measureText(text).width > maxWidth && s > 16) {
+    s -= 2;
     ctx.font = `${weight} ${s}px ${FONT}`;
-  } while (ctx.measureText(text).width > maxWidth && (s -= 2) > 16);
-  ctx.fillText(text, x, y);
+  }
+  let t = text;
+  if (ctx.measureText(t).width > maxWidth) {
+    while (t.length > 1) {
+      t = t.slice(0, -1);
+      ctx.font = `${weight} ${s}px ${FONT}`;
+      if (ctx.measureText(t + '\u2026').width <= maxWidth) {
+        t += '\u2026';
+        break;
+      }
+    }
+  }
+  ctx.fillText(t, x, y);
+}
+
+/** Draws a rounded-rectangle path (works everywhere; avoids ctx.roundRect support issues). */
+function roundedRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
 }
 
 /**
@@ -68,12 +93,47 @@ export function renderBannerCanvas({ xName, oName, scoreX, scoreO, draws, winner
   ctx.fillStyle = '#FFFFFF';
   drawFitText(ctx, title, W / 2, 302, W - 120, 62);
 
-  // Scoreline: name (left) · score (centre) · name (right)
+  // Scoreline: name (left) · score (centre) · name (right).
+  // The score sits in its own pill with hard gaps on both sides so the
+  // player names can never overlap it, even when names are long.
   const y = 424;
+  const scoreText = `${scoreX} - ${scoreO}`;
+
+  // Fit the score text to a fixed slot, then size the pill around it.
+  let scoreSize = 92;
+  ctx.textAlign = 'center';
+  ctx.font = `800 ${scoreSize}px ${FONT}`;
+  while (ctx.measureText(scoreText).width > 220 && scoreSize > 40) {
+    scoreSize -= 2;
+    ctx.font = `800 ${scoreSize}px ${FONT}`;
+  }
+  const scoreWidth = ctx.measureText(scoreText).width;
+  const pillW = scoreWidth + 80;
+  const pillH = scoreSize + 44;
+  const pillX = W / 2 - pillW / 2;
+  const pillY = y - pillH / 2;
+
+  // Score pill background + subtle border (mirrors the on-screen banner)
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  roundedRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 2;
+  roundedRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+  ctx.stroke();
+
   ctx.fillStyle = '#FFFFFF';
-  drawFitText(ctx, xName, 545, y, 320, 46, 700, 'right');
-  drawFitText(ctx, `${scoreX} - ${scoreO}`, W / 2, y, 260, 92, 800, 'center');
-  drawFitText(ctx, oName, 655, y, 320, 46, 700, 'left');
+  ctx.font = `800 ${scoreSize}px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(scoreText, W / 2, y);
+
+  // Player names occupy fixed zones outside the pill, with a guaranteed gap.
+  const gap = 36;
+  const leftEnd = pillX - gap;
+  const rightStart = pillX + pillW + gap;
+  ctx.fillStyle = '#FFFFFF';
+  drawFitText(ctx, xName, leftEnd, y, leftEnd - 48, 52, 700, 'right');
+  drawFitText(ctx, oName, rightStart, y, W - rightStart - 48, 52, 700, 'left');
 
   // Draws (if any)
   if (draws > 0) {
