@@ -13,7 +13,7 @@ import GameHistoryView from './components/GameHistoryView';
 import ConfirmDialog from './components/ConfirmDialog';
 import CelebrationBanner from './components/CelebrationBanner';
 import Footer from './components/Footer';
-import { checkWinner, checkDraw } from './utils/gameLogic';
+import { checkWinner, checkDraw, getNextStarter } from './utils/gameLogic';
 import { getAiMove } from './utils/aiLogic';
 import { sounds } from './utils/soundEffects';
 import {
@@ -128,6 +128,9 @@ export default function App() {
 
   const isGameOver = Boolean(winner || isDraw);
   const aiPlayer = humanSide === 'X' ? 'O' : 'X';
+
+  // Who starts the next game — loser goes first (X starts a fresh match)
+  const [startingPlayer, setStartingPlayer] = useState('X');
   const aiTimeoutRef = useRef(null);
   // Tracks when current round started (for duration calculation)
   const roundStartTimeRef = useRef(Date.now());
@@ -190,6 +193,8 @@ export default function App() {
       const w = winResult.winner;
       setWinner(w);
       setWinningCells(byTimeout ? [] : winResult.winningCells);
+      // Loser of this round starts the next one
+      setStartingPlayer(getNextStarter(startingPlayer, w));
 
       const winnerKey = w.toLowerCase();
       const winnerName = playerNames[w] || `Player ${w}`;
@@ -238,13 +243,15 @@ export default function App() {
         })
       );
     },
-    [playerNames, gameMode, difficulty, roundNumber, winsNeeded, updateStreakOnWin, triggerCelebration]
+    [playerNames, gameMode, difficulty, roundNumber, winsNeeded, updateStreakOnWin, triggerCelebration, startingPlayer]
   );
 
   // Shared: finish a round in a draw
   const applyDraw = useCallback(
     (moveCount) => {
       setIsDraw(true);
+      // Draw: alternate the starter for fairness
+      setStartingPlayer((prev) => getNextStarter(prev, null));
       const durationSec = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
 
       setScores((prev) => {
@@ -349,21 +356,27 @@ export default function App() {
     };
   }, [gameMode, currentPlayer, aiPlayer, humanSide, winner, isDraw, board, difficulty, makeMove, matchWinner]);
 
-  // Reset the board state for a fresh round (keeps scores & clocks)
-  const resetBoardForNewRound = useCallback(() => {
-    if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
-    setBoard(emptyBoard(boardSize));
-    setMoveHistory([]);
-    setCurrentPlayer('X');
-    setWinner(null);
-    setWinningCells([]);
-    setIsDraw(false);
-    setIsAiThinking(false);
-    setRoundSummary(null);
-    roundStartTimeRef.current = Date.now();
-  }, [boardSize]);
+  // Reset the board state for a fresh round (keeps scores & clocks).
+  // `starter` overrides the automatic "loser goes first" choice (e.g. a brand
+  // new match always starts with X).
+  const resetBoardForNewRound = useCallback(
+    (starter) => {
+      if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+      setBoard(emptyBoard(boardSize));
+      setMoveHistory([]);
+      setCurrentPlayer(starter || startingPlayer);
+      setWinner(null);
+      setWinningCells([]);
+      setIsDraw(false);
+      setIsAiThinking(false);
+      setRoundSummary(null);
+      roundStartTimeRef.current = Date.now();
+    },
+    [boardSize, startingPlayer]
+  );
 
-  // Restart current round (preserves match scores & running clocks)
+  // Restart current round (preserves match scores & running clocks).
+  // After a finished game the loser goes first (already set in startingPlayer).
   const handleRestart = useCallback(() => {
     resetBoardForNewRound();
     if (!matchWinner) {
@@ -372,9 +385,10 @@ export default function App() {
     sounds.playReset();
   }, [resetBoardForNewRound, matchWinner, isGameOver]);
 
-  // Start a completely new match (resets scores + round counter + clocks)
+  // Start a completely new match (fresh start — X goes first again)
   const handleNewMatch = useCallback(() => {
-    resetBoardForNewRound();
+    setStartingPlayer('X');
+    resetBoardForNewRound('X');
     const cleanScores = { x: 0, o: 0, draws: 0 };
     setScores(cleanScores);
     saveScores(cleanScores);
@@ -384,10 +398,19 @@ export default function App() {
     sounds.playReset();
   }, [resetBoardForNewRound, clockBankSeconds]);
 
-  // Rematch — identical to a new match (same settings)
+  // Rematch — same settings, but the loser of the last match goes first
   const handleRematch = useCallback(() => {
-    handleNewMatch();
-  }, [handleNewMatch]);
+    resetBoardForNewRound(); // uses startingPlayer (the loser / alternated side)
+    const cleanScores = { x: 0, o: 0, draws: 0 };
+    setScores(cleanScores);
+    saveScores(cleanScores);
+    setMatchWinner(null);
+    setRoundNumber(1);
+    setRoundSummary(null);
+    roundStartTimeRef.current = Date.now();
+    setClocks({ X: clockBankSeconds, O: clockBankSeconds });
+    sounds.playReset();
+  }, [resetBoardForNewRound, clockBankSeconds]);
 
   // Undo: remove the human's last move (plus the AI's reply when vs AI)
   const handleUndo = useCallback(() => {
@@ -455,6 +478,7 @@ export default function App() {
         setMatchWinner(null);
         setRoundNumber(1);
         setClocks({ X: clockBankSeconds, O: clockBankSeconds });
+        setStartingPlayer('X');
         handleRestart();
         setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
       },
@@ -571,6 +595,7 @@ export default function App() {
       setRoundNumber(1);
       setRoundSummary(null);
       roundStartTimeRef.current = Date.now();
+      setStartingPlayer('X');
       setBoard(emptyBoard(size));
       setMoveHistory([]);
       setCurrentPlayer('X');
@@ -833,11 +858,11 @@ export default function App() {
   const handleBannerPlayAgain = useCallback(() => {
     setShowBanner(false);
     if (matchLength !== 'single' && matchWinner) {
-      handleNewMatch();
+      handleRematch(); // loser of the match goes first
     } else {
-      handleRestart();
+      handleRestart(); // loser of the round goes first
     }
-  }, [matchLength, matchWinner, handleNewMatch, handleRestart]);
+  }, [matchLength, matchWinner, handleRematch, handleRestart]);
 
   return (
     <div className="app-container">

@@ -648,7 +648,7 @@ export default function OnlineGame({ onExit, onMatchComplete, restoredRooms = []
             <span>
               Format: <strong>{matchLabel}</strong>
             </span>
-            <span>X always moves first</span>
+            <span>X starts the first game · loser goes first after that</span>
           </div>
 
           <div className="online-actions-row">

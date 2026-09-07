@@ -131,3 +131,18 @@ export function getStatusMessage(winner, isDraw, currentPlayer) {
   }
   return `Player ${currentPlayer}'s Turn`;
 }
+
+/**
+ * Decides who starts the next game (the "loser goes first" rule).
+ * @param {string} prevStarter - Who started the game that just finished ('X' | 'O').
+ * @param {string|null} winner - Winner of that game ('X' | 'O' | null for a draw).
+ * @returns {string} The side ('X' | 'O') that should start the next game.
+ */
+export function getNextStarter(prevStarter, winner) {
+  if (winner === 'X' || winner === 'O') {
+    // Loser goes first
+    return winner === 'X' ? 'O' : 'X';
+  }
+  // Draw: alternate the starter to keep it fair
+  return prevStarter === 'X' ? 'O' : 'X';
+}

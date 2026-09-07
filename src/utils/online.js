@@ -21,7 +21,7 @@ import {
   onSnapshot,
   serverTimestamp,
 } from 'firebase/firestore';
-import { checkWinner, checkDraw } from './gameLogic.js';
+import { checkWinner, checkDraw, getNextStarter } from './gameLogic.js';
 import firebaseConfig from '../firebaseConfig.js';
 
 let db = null;
@@ -81,6 +81,7 @@ export async function createRoom({ hostName = 'Player 1', boardSize = 3, matchTa
     code,
     board: Array(boardSize * boardSize).fill(null),
     currentPlayer: null,
+    starter: null,
     winner: null,
     winningCells: [],
     isDraw: false,
@@ -151,7 +152,8 @@ export async function setSide(code, role, side) {
 
   if (hostSide && guestSide) {
     updates.status = 'playing';
-    updates.currentPlayer = 'X'; // X always moves first
+    updates.currentPlayer = 'X'; // X starts the first game
+    updates.starter = 'X';
   }
   updates.lastActiveAt = serverTimestamp();
 
@@ -254,6 +256,12 @@ export async function playAgain(code) {
   // NOT a rematch — it just advances to the next round.
   const rematch = data.status === 'over';
 
+  // Decide who starts the next game: the loser goes first; after a draw the
+  // starter alternates. (For a series rematch use the match winner; for a
+  // "next round" use the round winner.)
+  const decisiveWinner = rematch ? data.matchWinner : data.winner;
+  const starter = getNextStarter(data.starter || 'X', decisiveWinner);
+
   // Before resetting, permanently archive the finished match so results are
   // never lost, even across many "Play Again" cycles.
   const xName = data.hostSide === 'X' ? data.hostName || 'Player 1' : data.guestName || 'Player 2';
@@ -276,7 +284,8 @@ export async function playAgain(code) {
 
   await updateDoc(ref, {
     board: Array(data.boardSize * data.boardSize).fill(null),
-    currentPlayer: 'X',
+    currentPlayer: starter,
+    starter,
     winner: null,
     winningCells: [],
     isDraw: false,
